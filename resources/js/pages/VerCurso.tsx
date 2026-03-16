@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
+import { usePage } from "@inertiajs/react";
 import axios from "axios";
+import type { UserRole } from "@/types/auth";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 interface Video {
@@ -53,8 +55,14 @@ function isNativeVideo(url: string): boolean {
     return /\.(mp4|webm|ogg)(\?|$)/i.test(url);
 }
 
+const canEditContent = (role: UserRole | undefined) =>
+    role === "admin" || role === "docente";
+
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function VerCurso({ id }: { id: number }) {
+    const { auth } = usePage().props as { auth: { user?: { role: UserRole } } };
+    const role = auth.user?.role;
+
     const [curso, setCurso] = useState<Curso | null>(null);
     const [modulos, setModulos] = useState<Modulo[]>([]);
     const [nuevoModulo, setNuevoModulo] = useState("");
@@ -231,17 +239,6 @@ export default function VerCurso({ id }: { id: number }) {
                     </div>
                 )}
                 <div style={s.headerContent}>
-                    <nav style={s.headerNav}>
-                        <a href="/" style={s.headerNavLink}>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: "6px", verticalAlign: "middle" }}>
-                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                                <polyline points="9 22 9 12 15 12 15 22" />
-                            </svg>
-                            Inicio
-                        </a>
-                        <span style={s.headerNavSep}>/</span>
-                        <a href="/cursos" style={s.headerNavLink}>Cursos</a>
-                    </nav>
                     <span style={s.badge}>VR COURSE</span>
                     <h1 style={s.cursoTitulo}>{curso.titulo}</h1>
                     <p style={s.cursoDesc}>{curso.descripcion}</p>
@@ -352,34 +349,36 @@ export default function VerCurso({ id }: { id: number }) {
                                                     <polyline points="6 9 12 15 18 9" />
                                                 </svg>
                                             </button>
-                                            {/* Acciones del módulo */}
-                                            <div style={s.moduloActions}>
-                                                <button
-                                                    title="Editar módulo"
-                                                    style={s.iconBtn}
-                                                    className="icon-btn"
-                                                    onClick={() => {
-                                                        setModalEditModulo(modulo);
-                                                        setEditTituloModulo(modulo.titulo);
-                                                    }}
-                                                >
-                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                                    </svg>
-                                                </button>
-                                                <button
-                                                    title="Agregar video"
-                                                    style={{ ...s.iconBtn, color: "#4caf7d" }}
-                                                    className="icon-btn"
-                                                    onClick={() => setModalVideo({ modulo_id: modulo.id })}
-                                                >
-                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                        <line x1="12" y1="5" x2="12" y2="19" />
-                                                        <line x1="5" y1="12" x2="19" y2="12" />
-                                                    </svg>
-                                                </button>
-                                            </div>
+                                            {/* Acciones del módulo (solo docente/admin) */}
+                                            {canEditContent(role) && (
+                                                <div style={s.moduloActions}>
+                                                    <button
+                                                        title="Editar módulo"
+                                                        style={s.iconBtn}
+                                                        className="icon-btn"
+                                                        onClick={() => {
+                                                            setModalEditModulo(modulo);
+                                                            setEditTituloModulo(modulo.titulo);
+                                                        }}
+                                                    >
+                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        title="Agregar video"
+                                                        style={{ ...s.iconBtn, color: "#4caf7d" }}
+                                                        className="icon-btn"
+                                                        onClick={() => setModalVideo({ modulo_id: modulo.id })}
+                                                    >
+                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <line x1="12" y1="5" x2="12" y2="19" />
+                                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* Videos del módulo */}
@@ -408,18 +407,20 @@ export default function VerCurso({ id }: { id: number }) {
                                                                     </svg>
                                                                 )}
                                                             </button>
-                                                            <button
-                                                                title="Eliminar video"
-                                                                style={s.deleteBtn}
-                                                                className="delete-btn"
-                                                                onClick={() => eliminarVideo(video.id)}
-                                                            >
-                                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                    <polyline points="3 6 5 6 21 6" />
-                                                                    <path d="M19 6l-1 14H6L5 6" />
-                                                                    <path d="M10 11v6M14 11v6" />
-                                                                </svg>
-                                                            </button>
+                                                            {canEditContent(role) && (
+                                                                <button
+                                                                    title="Eliminar video"
+                                                                    style={s.deleteBtn}
+                                                                    className="delete-btn"
+                                                                    onClick={() => eliminarVideo(video.id)}
+                                                                >
+                                                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <polyline points="3 6 5 6 21 6" />
+                                                                        <path d="M19 6l-1 14H6L5 6" />
+                                                                        <path d="M10 11v6M14 11v6" />
+                                                                    </svg>
+                                                                </button>
+                                                            )}
                                                         </li>
                                                     );
                                                 })}
@@ -430,37 +431,39 @@ export default function VerCurso({ id }: { id: number }) {
                             })}
                         </div>
 
-                        {/* Agregar módulo */}
-                        <div style={s.addModuloSection}>
-                            {mostrarFormModulo ? (
-                                <div style={s.addModuloForm}>
-                                    <input
-                                        style={s.inputDark}
-                                        placeholder="Nombre del módulo..."
-                                        value={nuevoModulo}
-                                        onChange={(e) => setNuevoModulo(e.target.value)}
-                                        onKeyDown={(e) => e.key === "Enter" && agregarModulo()}
-                                        autoFocus
-                                    />
-                                    <div style={{ display: "flex", gap: "6px" }}>
-                                        <button style={s.btnCancelSm} onClick={() => { setMostrarFormModulo(false); setNuevoModulo(""); }}>
-                                            ✕
-                                        </button>
-                                        <button style={s.btnPrimarySm} onClick={agregarModulo}>
-                                            Crear
-                                        </button>
+                        {/* Agregar módulo (solo docente/admin) */}
+                        {canEditContent(role) && (
+                            <div style={s.addModuloSection}>
+                                {mostrarFormModulo ? (
+                                    <div style={s.addModuloForm}>
+                                        <input
+                                            style={s.inputDark}
+                                            placeholder="Nombre del módulo..."
+                                            value={nuevoModulo}
+                                            onChange={(e) => setNuevoModulo(e.target.value)}
+                                            onKeyDown={(e) => e.key === "Enter" && agregarModulo()}
+                                            autoFocus
+                                        />
+                                        <div style={{ display: "flex", gap: "6px" }}>
+                                            <button style={s.btnCancelSm} onClick={() => { setMostrarFormModulo(false); setNuevoModulo(""); }}>
+                                                ✕
+                                            </button>
+                                            <button style={s.btnPrimarySm} onClick={agregarModulo}>
+                                                Crear
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            ) : (
-                                <button style={s.addModuloBtn} className="add-modulo-btn" onClick={() => setMostrarFormModulo(true)}>
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <line x1="12" y1="5" x2="12" y2="19" />
-                                        <line x1="5" y1="12" x2="19" y2="12" />
-                                    </svg>
-                                    Nuevo módulo
-                                </button>
-                            )}
-                        </div>
+                                ) : (
+                                    <button style={s.addModuloBtn} className="add-modulo-btn" onClick={() => setMostrarFormModulo(true)}>
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <line x1="12" y1="5" x2="12" y2="19" />
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                        </svg>
+                                        Nuevo módulo
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </aside>
                 </div>
             </section>
@@ -512,24 +515,6 @@ const s: Record<string, React.CSSProperties> = {
         position: "relative",
         padding: "36px 40px",
         maxWidth: "700px",
-    },
-    headerNav: {
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        marginBottom: "16px",
-        fontSize: "13px",
-    },
-    headerNavLink: {
-        color: "#8b8aaa",
-        textDecoration: "none",
-        display: "inline-flex",
-        alignItems: "center",
-        transition: "color .15s",
-    },
-    headerNavSep: {
-        color: "#3a3b4d",
-        userSelect: "none",
     },
     badge: {
         fontFamily: "'Space Mono', monospace",

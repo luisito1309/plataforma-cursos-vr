@@ -8,60 +8,29 @@ use App\Http\Controllers\VideoController;
 
 /*
 |--------------------------------------------------------------------------
-| API Routes
+| API Routes (requieren auth para escritura; lectura según rol)
 |--------------------------------------------------------------------------
-|
-| Aquí se definen todas las rutas de la API para cursos, módulos, videos
-| y las inscripciones de estudiantes.
-|
 */
 
-/** ----------------- CURSOS ----------------- */
+Route::middleware('auth:sanctum')->group(function () {
+    /** ----------------- CURSOS ----------------- */
+    Route::get('/cursos', [CursoController::class, 'index']);
+    Route::post('/cursos', [CursoController::class, 'store']);
+    Route::get('/cursos/{id}', [CursoController::class, 'show']);
+    Route::put('/cursos/{id}', [CursoController::class, 'update']);
+    Route::delete('/cursos/{id}', [CursoController::class, 'destroy']);
+    Route::get('/cursos/{id}/modulos', [CursoController::class, 'modulos']);
 
-// Listar todos los cursos
-Route::get('/cursos', [CursoController::class, 'index']);
+    /** ----------------- MÓDULOS ----------------- */
+    Route::post('/modulos', [ModuloController::class, 'store']);
+    Route::put('/modulos/{id}', [ModuloController::class, 'update']);
+    Route::delete('/modulos/{id}', [ModuloController::class, 'destroy']);
 
-// Crear curso
-Route::post('/cursos', [CursoController::class, 'store']);
+    /** ----------------- VIDEOS ----------------- */
+    Route::post('/videos', [VideoController::class, 'store']);
+    Route::delete('/videos/{id}', [VideoController::class, 'destroy']);
 
-// Ver un curso específico
-Route::get('/cursos/{id}', [CursoController::class, 'show']);
-
-// Actualizar curso
-Route::put('/cursos/{id}', [CursoController::class, 'update']);
-
-// Eliminar curso
-Route::delete('/cursos/{id}', [CursoController::class, 'destroy']);
-
-// Obtener módulos de un curso
-Route::get('/cursos/{id}/modulos', [CursoController::class, 'modulos']);
-
-
-/** ----------------- MÓDULOS ----------------- */
-
-// Crear módulo
-Route::post('/modulos', [ModuloController::class, 'store']);
-
-// Actualizar módulo
-Route::put('/modulos/{id}', [ModuloController::class, 'update']);
-
-// Eliminar módulo
-Route::delete('/modulos/{id}', [ModuloController::class, 'destroy']);
-
-
-/** ----------------- VIDEOS ----------------- */
-
-// Crear video
-Route::post('/videos', [VideoController::class, 'store']);
-
-// Eliminar video
-Route::delete('/videos/{id}', [VideoController::class, 'destroy']);
-
-
-/** ----------------- INSCRIPCIONES ----------------- */
-
-// Inscribirse a un curso
-Route::post('/inscribirse', [InscripcionController::class, 'inscribirse']);
-
-// Obtener cursos inscritos por usuario
-Route::get('/mis-cursos', [InscripcionController::class, 'misCursos']);
+    /** ----------------- INSCRIPCIONES ----------------- */
+    Route::post('/inscribirse', [InscripcionController::class, 'inscribirse']);
+    Route::get('/mis-cursos', [InscripcionController::class, 'misCursos']);
+});

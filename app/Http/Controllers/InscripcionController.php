@@ -9,10 +9,13 @@ class InscripcionController extends Controller
 {
     public function inscribirse(Request $request)
 {
+    $user = $request->user();
+    if (! $user || $user->role !== 'estudiante') {
+        return response()->json(['error' => 'Solo los estudiantes pueden inscribirse a cursos'], 403);
+    }
     try {
-
         $inscripcion = Inscripcion::create([
-            'user_id' => 1,
+            'user_id' => $user->id,
             'curso_id' => $request->curso_id
         ]);
 
@@ -28,12 +31,14 @@ class InscripcionController extends Controller
         ]);
     }
 }
-public function misCursos()
+public function misCursos(Request $request)
 {
-    $user_id = 1;
-
+    $user = $request->user();
+    if (! $user) {
+        return response()->json(['error' => 'No autenticado'], 401);
+    }
     $cursos = \App\Models\Curso::join('inscripciones', 'cursos.id', '=', 'inscripciones.curso_id')
-        ->where('inscripciones.user_id', $user_id)
+        ->where('inscripciones.user_id', $user->id)
         ->select('cursos.*')
         ->get();
 

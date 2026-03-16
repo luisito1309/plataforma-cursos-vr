@@ -23,10 +23,14 @@ class CursoController extends Controller
         $imagenPath = $request->file('imagen')->store('cursos','public');
     }
 
+    $user = $request->user();
+    if (! $user || ! in_array($user->role, ['admin', 'docente'])) {
+        return response()->json(['error' => 'No autorizado para crear cursos'], 403);
+    }
     $curso = Curso::create([
         'titulo' => $request->titulo,
         'descripcion' => $request->descripcion,
-        'docente_id' => 1,
+        'docente_id' => $user->id,
         'estado' => 'pendiente',
         'imagen' => $imagenPath
     ]);
@@ -49,27 +53,35 @@ class CursoController extends Controller
     public function update(Request $request, $id)
     {
         $curso = Curso::find($id);
-
-        if(!$curso){
-            return response()->json(['mensaje'=>'Curso no encontrado']);
+        if (! $curso) {
+            return response()->json(['mensaje' => 'Curso no encontrado'], 404);
         }
-
+        $user = $request->user();
+        if (! $user || ! in_array($user->role, ['admin', 'docente'])) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+        if ($user->role === 'docente' && $curso->docente_id != $user->id) {
+            return response()->json(['error' => 'No autorizado para editar este curso'], 403);
+        }
         $curso->update($request->all());
-
         return response()->json($curso);
     }
 
     public function destroy($id)
     {
         $curso = Curso::find($id);
-
-        if(!$curso){
-            return response()->json(['mensaje'=>'Curso no encontrado']);
+        if (! $curso) {
+            return response()->json(['mensaje' => 'Curso no encontrado'], 404);
         }
-
+        $user = $request->user();
+        if (! $user || ! in_array($user->role, ['admin', 'docente'])) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+        if ($user->role === 'docente' && $curso->docente_id != $user->id) {
+            return response()->json(['error' => 'No autorizado para eliminar este curso'], 403);
+        }
         $curso->delete();
-
-        return response()->json(['mensaje'=>'Curso eliminado']);
+        return response()->json(['mensaje' => 'Curso eliminado']);
     }
     public function modulos($id)
 {

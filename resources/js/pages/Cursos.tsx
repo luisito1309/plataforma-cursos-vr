@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { usePage } from "@inertiajs/react";
 import axios from "axios";
+import type { UserRole } from "@/types/auth";
 
 interface Curso {
     id: number;
@@ -10,7 +12,13 @@ interface Curso {
     docente_id?: number;
 }
 
+const canEditCourses = (role: UserRole | undefined) =>
+    role === "admin" || role === "docente";
+const canEnroll = (role: UserRole | undefined) => role === "estudiante";
+
 export default function Cursos() {
+    const { auth } = usePage().props as { auth: { user?: { role: UserRole } } };
+    const role = auth.user?.role;
     const [cursos, setCursos] = useState<Curso[]>([]);
     const [titulo, setTitulo] = useState("");
     const [descripcion, setDescripcion] = useState("");
@@ -120,30 +128,25 @@ export default function Cursos() {
                         <p style={s.pageSubtitle}>Explora, crea y gestiona tus cursos de realidad virtual</p>
                     </div>
                     <div style={s.headerActions}>
-                        <a href="/" style={{ textDecoration: "none" }}>
-                            <button style={s.btnOutline} className="btn-outline">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: "6px", verticalAlign: "middle" }}>
-                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                                    <polyline points="9 22 9 12 15 12 15 22" />
-                                </svg>
-                                Inicio
+                        {canEnroll(role) && (
+                            <a href="/mis-cursos" style={{ textDecoration: "none" }}>
+                                <button style={s.btnOutline} className="btn-outline">Mis Cursos</button>
+                            </a>
+                        )}
+                        {canEditCourses(role) && (
+                            <button
+                                style={s.btnPrimaryLg}
+                                className="btn-primary-lg"
+                                onClick={() => setMostrarForm(!mostrarForm)}
+                            >
+                                {mostrarForm ? "✕ Cancelar" : "+ Nuevo Curso"}
                             </button>
-                        </a>
-                        <a href="/mis-cursos" style={{ textDecoration: "none" }}>
-                            <button style={s.btnOutline} className="btn-outline">Mis Cursos</button>
-                        </a>
-                        <button
-                            style={s.btnPrimaryLg}
-                            className="btn-primary-lg"
-                            onClick={() => setMostrarForm(!mostrarForm)}
-                        >
-                            {mostrarForm ? "✕ Cancelar" : "+ Nuevo Curso"}
-                        </button>
+                        )}
                     </div>
                 </div>
 
-                {/* ── FORMULARIO CREAR CURSO ─────────────────────────────────── */}
-                {mostrarForm && (
+                {/* ── FORMULARIO CREAR CURSO (solo docente/admin) ───────────────── */}
+                {canEditCourses(role) && mostrarForm && (
                     <div style={s.formPanel}>
                         <div style={s.formGrid}>
                             <div style={s.formGroup}>
@@ -250,36 +253,42 @@ export default function Cursos() {
                                                 Ver Curso
                                             </button>
                                         </a>
-                                        <button
-                                            onClick={() => inscribirse(curso.id)}
-                                            style={{ ...s.actionBtn, ...s.actionBtnGreen }}
-                                            className="action-btn-green"
-                                        >
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" />
-                                            </svg>
-                                        </button>
-                                        <button
-                                            onClick={() => abrirModalEditar(curso)}
-                                            style={{ ...s.actionBtn, ...s.actionBtnEdit }}
-                                            className="action-btn-edit"
-                                        >
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                            </svg>
-                                        </button>
-                                        <button
-                                            onClick={() => eliminarCurso(curso.id)}
-                                            style={{ ...s.actionBtn, ...s.actionBtnDelete }}
-                                            className="action-btn-delete"
-                                        >
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                <polyline points="3 6 5 6 21 6" />
-                                                <path d="M19 6l-1 14H6L5 6" />
-                                                <path d="M10 11v6M14 11v6" />
-                                            </svg>
-                                        </button>
+                                        {canEnroll(role) && (
+                                            <button
+                                                onClick={() => inscribirse(curso.id)}
+                                                style={{ ...s.actionBtn, ...s.actionBtnGreen }}
+                                                className="action-btn-green"
+                                            >
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" />
+                                                </svg>
+                                            </button>
+                                        )}
+                                        {canEditCourses(role) && (
+                                            <>
+                                                <button
+                                                    onClick={() => abrirModalEditar(curso)}
+                                                    style={{ ...s.actionBtn, ...s.actionBtnEdit }}
+                                                    className="action-btn-edit"
+                                                >
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                    onClick={() => eliminarCurso(curso.id)}
+                                                    style={{ ...s.actionBtn, ...s.actionBtnDelete }}
+                                                    className="action-btn-delete"
+                                                >
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <polyline points="3 6 5 6 21 6" />
+                                                        <path d="M19 6l-1 14H6L5 6" />
+                                                        <path d="M10 11v6M14 11v6" />
+                                                    </svg>
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             </div>
