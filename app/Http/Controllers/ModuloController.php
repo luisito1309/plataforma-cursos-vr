@@ -36,5 +36,16 @@ class ModuloController extends Controller
         return response()->json($modulo);
 
     }
+    public function destroy($id)
+{
+    $modulo = Modulo::find($id);
 
+    if (!$modulo) {
+        return response()->json(['message' => 'Módulo no encontrado'], 404);
+    }
+
+    $modulo->delete();
+
+    return response()->json(['message' => 'Módulo eliminado con éxito']);
+}
 }

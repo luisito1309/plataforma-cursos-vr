@@ -10,7 +10,7 @@ use Inertia\Inertia;
 |--------------------------------------------------------------------------
 */
 
-Route::inertia('/', 'welcome', [
+Route::inertia('/', 'Home', [
     'canRegister' => Features::enabled(Features::registration()),
 ])->name('home');
 

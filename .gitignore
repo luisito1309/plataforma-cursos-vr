@@ -1,28 +1,87 @@
-/.phpunit.cache
-/bootstrap/ssr
+# ===============================
+# Laravel
+# ===============================
+
+/vendor
 /node_modules
 /public/build
 /public/hot
 /public/storage
+/bootstrap/cache
+/bootstrap/ssr
+
+# ===============================
+# Storage
+# ===============================
+
 /storage/*.key
 /storage/pail
-/resources/js/actions
-/resources/js/routes
-/resources/js/wayfinder
-/vendor
-.DS_Store
+/.phpunit.cache
+.phpunit.result.cache
+
+# ===============================
+# Environment files
+# ===============================
+
 .env
 .env.backup
 .env.production
-.phpactor.json
-.phpunit.result.cache
-Homestead.json
-Homestead.yaml
+auth.json
+
+# ===============================
+# Logs
+# ===============================
+
 npm-debug.log
 yarn-error.log
-/auth.json
-/.fleet
-/.idea
-/.nova
-/.vscode
-/.zed
+
+# ===============================
+# OS Files
+# ===============================
+
+.DS_Store
+Thumbs.db
+
+# ===============================
+# IDE / Editors
+# ===============================
+
+.idea
+.vscode
+.fleet
+.zed
+.nova
+
+# ===============================
+# PHP Tools
+# ===============================
+
+.phpactor.json
+
+# ===============================
+# Laravel Homestead
+# ===============================
+
+Homestead.json
+Homestead.yaml
+
+# ===============================
+# Frontend temporary
+# ===============================
+
+/resources/js/actions
+/resources/js/routes
+/resources/js/wayfinder
+
+# ===============================
+# Testing
+# ===============================
+
+.phpunit.cache
+
+# ===============================
+# Misc
+# ===============================
+
+*.log
+*.cache

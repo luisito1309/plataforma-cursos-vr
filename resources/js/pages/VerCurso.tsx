@@ -231,6 +231,17 @@ export default function VerCurso({ id }: { id: number }) {
                     </div>
                 )}
                 <div style={s.headerContent}>
+                    <nav style={s.headerNav}>
+                        <a href="/" style={s.headerNavLink}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: "6px", verticalAlign: "middle" }}>
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                <polyline points="9 22 9 12 15 12 15 22" />
+                            </svg>
+                            Inicio
+                        </a>
+                        <span style={s.headerNavSep}>/</span>
+                        <a href="/cursos" style={s.headerNavLink}>Cursos</a>
+                    </nav>
                     <span style={s.badge}>VR COURSE</span>
                     <h1 style={s.cursoTitulo}>{curso.titulo}</h1>
                     <p style={s.cursoDesc}>{curso.descripcion}</p>
@@ -501,6 +512,24 @@ const s: Record<string, React.CSSProperties> = {
         position: "relative",
         padding: "36px 40px",
         maxWidth: "700px",
+    },
+    headerNav: {
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        marginBottom: "16px",
+        fontSize: "13px",
+    },
+    headerNavLink: {
+        color: "#8b8aaa",
+        textDecoration: "none",
+        display: "inline-flex",
+        alignItems: "center",
+        transition: "color .15s",
+    },
+    headerNavSep: {
+        color: "#3a3b4d",
+        userSelect: "none",
     },
     badge: {
         fontFamily: "'Space Mono', monospace",
