@@ -7,7 +7,7 @@ import AnatomiaHumana3D from "@/components/AnatomiaHumana3D";
 import {
     GraduationCap, Home, ArrowLeft, Play, ChevronDown,
     Plus, X, Edit2, Trash2, FileText, Video, Layers,
-    SkipBack, SkipForward, Monitor, Gamepad2, Zap, Brain,
+    SkipBack, SkipForward, Monitor, Gamepad2, Zap, ScanLine, Glasses,
 } from "lucide-react";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
@@ -39,11 +39,17 @@ const MINI_JUEGOS_INFO: Record<string, { label: string; tag: string; icon: React
         icon: <Zap size={14} />,
         // sin url = usa componente <QuizMedico3D />
     },
-    anatomia_humana_pro: {
-        label: "Anatomía Humana Interactiva 3D PRO",
+    anatomia_humana: {
+        label: "Anatomía humana 3D",
         tag: "3D",
-        icon: <Brain size={14} />,
+        icon: <ScanLine size={14} />,
         // sin url = usa componente <AnatomiaHumana3D />
+    },
+    konterball: {
+        label: "Konterball (VR web)",
+        tag: "VR",
+        icon: <Glasses size={14} />,
+        url: "https://konterball.com/",
     },
     // ── Juegos futuros ────────────────────────────────────────────────────────
     // quiz_vr:    { label: "Quiz VR",          tag: "VR",  icon: <Gamepad2 size={14} />, url: "https://..." },
@@ -665,7 +671,7 @@ export default function VerCurso({ id }: { id: number }) {
                                                     src={juego.url}
                                                     title={juego.label}
                                                     style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none", display: "block" }}
-                                                    allow="fullscreen; autoplay"
+                                                    allow="fullscreen; autoplay; xr-spatial-tracking; gyroscope; accelerometer"
                                                     loading="lazy"
                                                 />
                                             </div>
@@ -677,8 +683,8 @@ export default function VerCurso({ id }: { id: number }) {
                                             <div style={{ padding: 24, background: "#14151c" }}>
                                                 <QuizMedico3D />
                                             </div>
-                                        ) : juegoSeleccionado === "anatomia_humana_pro" ? (
-                                            <div style={{ padding: 0, background: "#070a10" }}>
+                                        ) : juegoSeleccionado === "anatomia_humana" ? (
+                                            <div style={{ padding: 24, background: "#14151c" }}>
                                                 <AnatomiaHumana3D />
                                             </div>
                                         ) : null}

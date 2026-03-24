@@ -5,7 +5,7 @@ import AnatomiaHumana3D from "@/components/AnatomiaHumana3D";
 import {
     BookOpen, GraduationCap, Home, Plus, X,
     Upload, Edit2, Trash2, UserPlus, Play, Monitor,
-    Gamepad2, Glasses, Cpu, Zap, Brain,
+    Gamepad2, Glasses, Cpu, Zap, ScanLine,
 } from "lucide-react";
 
 // ─── Catálogo de mini juegos (escalable) ─────────────────────────────────────
@@ -16,12 +16,8 @@ const MINI_JUEGOS: MiniJuegoOption[] = [
     { value: "monster_friend", label: "Monster or Friend", icon: <Gamepad2 size={14} />, tag: "WEB" },
     { value: "pingpong", label: "Ping Pong (3D)", icon: <Monitor size={14} />, tag: "3D" },
     { value: "quiz_medico", label: "Quiz médico 3D", icon: <Zap size={14} />, tag: "QUIZ" },
-    {
-        value: "anatomia_humana_pro",
-        label: "Anatomía Humana Interactiva 3D PRO",
-        icon: <Brain size={14} />,
-        tag: "3D",
-    },
+    { value: "anatomia_humana", label: "Anatomía humana 3D", icon: <ScanLine size={14} />, tag: "3D" },
+    { value: "konterball", label: "Konterball (VR web)", icon: <Glasses size={14} />, tag: "VR" },
     // Futuros juegos — descomenta para activar:
     // { value: "vr_escape",   label: "Escape Room VR",     icon: <Glasses  size={14} />, tag: "VR"   },
     // { value: "sim_fisica",  label: "Simulación Física",  icon: <Cpu      size={14} />, tag: "SIM"  },
@@ -296,27 +292,70 @@ export default function Cursos() {
                                 </div>
                             )}
 
-                            {miniJuego === "anatomia_humana_pro" && (
+                            {miniJuego === "anatomia_humana" && (
                                 <div
                                     style={{
                                         marginTop: 24,
                                         padding: "24px",
-                                        background: "#0a0c12",
+                                        background: "#fafaf8",
                                         borderRadius: 16,
-                                        border: "1px solid #1e293b",
+                                        border: "1px solid #e3e3e0",
                                     }}
                                 >
                                     <p
                                         style={{
                                             ...labelSt,
                                             marginBottom: 12,
-                                            color: "#e2e8f0",
+                                            color: "#1b1b18",
                                             letterSpacing: ".04em",
                                         }}
                                     >
-                                        Vista previa — Anatomía Humana Interactiva 3D PRO
+                                        Vista previa — Anatomía humana 3D
                                     </p>
-                                    <AnatomiaHumana3D />
+                                    <div style={{ maxWidth: 900 }}>
+                                        <AnatomiaHumana3D />
+                                    </div>
+                                </div>
+                            )}
+
+                            {miniJuego === "konterball" && (
+                                <div
+                                    style={{
+                                        marginTop: 24,
+                                        padding: "24px",
+                                        background: "#fafaf8",
+                                        borderRadius: 16,
+                                        border: "1px solid #e3e3e0",
+                                    }}
+                                >
+                                    <p
+                                        style={{
+                                            ...labelSt,
+                                            marginBottom: 12,
+                                            color: "#1b1b18",
+                                            letterSpacing: ".04em",
+                                        }}
+                                    >
+                                        Vista previa — Konterball
+                                    </p>
+                                    <iframe
+                                        src="https://konterball.com/"
+                                        title="Konterball"
+                                        style={{
+                                            width: "100%",
+                                            height: 520,
+                                            border: "none",
+                                            borderRadius: 12,
+                                            background: "#0a0b12",
+                                        }}
+                                        allow="xr-spatial-tracking; fullscreen; gyroscope; accelerometer"
+                                        loading="lazy"
+                                    />
+                                    <p style={{ margin: "10px 0 0", fontSize: 12, color: "#706f6c" }}>
+                                        <a href="https://konterball.com/" target="_blank" rel="noopener noreferrer" style={{ color: "#f53003" }}>
+                                            Abrir Konterball en pestaña nueva
+                                        </a>
+                                    </p>
                                 </div>
                             )}
 
