@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import {
+    BookOpen, GraduationCap, Home, ArrowLeft,
+    Play, BookMarked, ChevronRight,
+} from "lucide-react";
 
 interface Curso {
     id: number;
@@ -9,363 +13,219 @@ interface Curso {
     estado?: string;
 }
 
+// ─── Tokens ──────────────────────────────────────────────────────────────────
+const btnRed: React.CSSProperties = {
+    background: "#f53003", color: "#fff", border: "none",
+    borderRadius: "10px", padding: "0 18px", height: "36px",
+    fontSize: "13px", fontFamily: "'Instrument Sans', sans-serif",
+    fontWeight: 600, cursor: "pointer", display: "inline-flex",
+    alignItems: "center", gap: "7px",
+};
+
+const btnOutline: React.CSSProperties = {
+    background: "#fff", color: "#706f6c",
+    border: "1px solid #d1d0cc", borderRadius: "10px",
+    padding: "0 16px", height: "36px", fontSize: "13px",
+    fontFamily: "'Instrument Sans', sans-serif",
+    fontWeight: 500, cursor: "pointer", display: "inline-flex",
+    alignItems: "center", gap: "7px",
+};
+
 export default function MisCursos() {
     const [cursos, setCursos] = useState<Curso[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        obtenerCursos();
-    }, []);
+    useEffect(() => { cargar(); }, []);
 
-    const obtenerCursos = () => {
+    const cargar = () =>
         axios.get("/api/mis-cursos")
-            .then(response => setCursos(response.data))
-            .catch(error => console.error("Error cargando mis cursos:", error))
+            .then(r => setCursos(r.data))
+            .catch(e => console.error("Error cargando mis cursos:", e))
             .finally(() => setLoading(false));
-    };
 
+    // ── Loading ──────────────────────────────────────────────────────────────
     if (loading) {
         return (
-            <div style={s.loadingWrap}>
-                <style>{css}</style>
-                <div style={s.spinner} />
-                <p style={s.loadingText}>Cargando tus cursos...</p>
-            </div>
+            <>
+                <style>{fonts}</style>
+                <div style={{ fontFamily: "'Instrument Sans', sans-serif", background: "#FDFDFC", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: "50%", border: "2.5px solid #e3e3e0", borderTopColor: "#f53003", animation: "spin .8s linear infinite" }} />
+                    <p style={{ color: "#706f6c", fontSize: 14, margin: 0 }}>Cargando tus cursos...</p>
+                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                </div>
+            </>
         );
     }
 
     return (
-        <div style={s.page}>
-            <style>{css}</style>
+        <>
+            <style>{fonts + hoverCss}</style>
 
-            {/* ── HEADER ────────────────────────────────────────────────────── */}
-            <header style={s.header}>
-                <div style={s.headerInner}>
-                    <div>
-                        <span style={s.badge}>MI APRENDIZAJE</span>
-                        <h1 style={s.pageTitle}>Mis Cursos</h1>
-                        <p style={s.pageSubtitle}>Continúa donde lo dejaste</p>
+            <div style={{ fontFamily: "'Instrument Sans', sans-serif", background: "#FDFDFC", minHeight: "100vh", color: "#1b1b18" }}>
+
+                {/* ══ NAV ══ */}
+                <header style={{ position: "sticky", top: 0, zIndex: 50, borderBottom: "1px solid rgba(227,227,224,.7)", background: "rgba(253,253,252,.92)", backdropFilter: "blur(8px)" }}>
+                    <div style={{ maxWidth: 1152, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60 }}>
+                        {/* Logo */}
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <div style={{ width: 32, height: 32, borderRadius: 10, background: "#f53003", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <GraduationCap size={16} color="#fff" />
+                            </div>
+                            <span style={{ fontSize: 15, fontWeight: 600 }}>EduPlatform</span>
+                        </div>
+
+                        {/* Acciones nav */}
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                            <a href="/" style={{ textDecoration: "none" }}>
+                                <button className="mc-btn-out" style={btnOutline}>
+                                    <Home size={14} /> Home
+                                </button>
+                            </a>
+                            <a href="/cursos" style={{ textDecoration: "none" }}>
+                                <button className="mc-btn-out" style={btnOutline}>
+                                    <ArrowLeft size={14} /> Explorar cursos
+                                </button>
+                            </a>
+                        </div>
                     </div>
-                    <div style={s.headerActions}>
-                        <a href="/cursos" style={{ textDecoration: "none" }}>
-                            <button style={s.btnOutline} className="btn-outline">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <line x1="19" y1="12" x2="5" y2="12" />
-                                    <polyline points="12 19 5 12 12 5" />
-                                </svg>
-                                Explorar cursos
+                </header>
+
+                {/* ══ HERO TITLE ══ */}
+                <section style={{ position: "relative", overflow: "hidden", borderBottom: "1px solid rgba(227,227,224,.6)" }}>
+                    {/* Blobs */}
+                    <div style={{ position: "absolute", top: -80, right: -80, width: 400, height: 400, borderRadius: "50%", background: "rgba(245,48,3,.04)", filter: "blur(60px)", pointerEvents: "none" }} />
+                    <div style={{ position: "absolute", bottom: 0, left: -40, width: 260, height: 260, borderRadius: "50%", background: "rgba(248,184,3,.05)", filter: "blur(50px)", pointerEvents: "none" }} />
+
+                    <div style={{ position: "relative", maxWidth: 1152, margin: "0 auto", padding: "48px 24px 40px", display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 20 }}>
+                        <div>
+                            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 999, border: "1px solid rgba(245,48,3,.25)", background: "rgba(245,48,3,.06)", padding: "4px 14px", fontSize: 12, fontWeight: 600, color: "#f53003", marginBottom: 14 }}>
+                                <BookMarked size={12} /> MI APRENDIZAJE
+                            </div>
+                            <h1 style={{ margin: "0 0 8px", fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 900, fontFamily: "'Playfair Display', serif", lineHeight: 1.1 }}>
+                                Mis Cursos
+                            </h1>
+                            <p style={{ margin: 0, fontSize: 15, color: "#706f6c" }}>Continúa donde lo dejaste</p>
+                        </div>
+
+                        {/* Stat */}
+                        <div style={{ background: "#fff", border: "1px solid #e3e3e0", borderRadius: 14, padding: "14px 22px", boxShadow: "0 2px 8px rgba(0,0,0,.04)", display: "flex", alignItems: "center", gap: 10 }}>
+                            <BookOpen size={16} color="#f53003" />
+                            <span style={{ fontSize: 13, color: "#706f6c" }}>
+                                <b style={{ color: "#1b1b18", fontSize: 22, fontFamily: "'Playfair Display', serif" }}>{cursos.length}</b> {cursos.length === 1 ? "curso inscrito" : "cursos inscritos"}
+                            </span>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ══ CONTENIDO ══ */}
+                <main style={{ maxWidth: 1152, margin: "0 auto", padding: "36px 24px 72px" }}>
+
+                    {/* Empty state */}
+                    {cursos.length === 0 ? (
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "100px 0", gap: 20, textAlign: "center" }}>
+                            <div style={{ width: 80, height: 80, borderRadius: 24, background: "rgba(245,48,3,.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <BookOpen size={36} color="rgba(245,48,3,.25)" />
+                            </div>
+                            <div>
+                                <p style={{ color: "#1b1b18", fontSize: 18, fontWeight: 700, margin: "0 0 8px", fontFamily: "'Playfair Display', serif" }}>
+                                    Aún no estás inscrito en ningún curso
+                                </p>
+                                <p style={{ color: "#706f6c", fontSize: 14, margin: 0 }}>
+                                    Explora el catálogo y comienza tu aprendizaje en VR
+                                </p>
+                            </div>
+                            <a href="/cursos" style={{ textDecoration: "none" }}>
+                                <button className="mc-btn-red" style={{ ...btnRed, height: 40, paddingInline: 24 }}>
+                                    Ver cursos disponibles <ChevronRight size={14} />
+                                </button>
+                            </a>
+                        </div>
+                    ) : (
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
+                            {cursos.map((curso, i) => (
+                                <article
+                                    key={curso.id}
+                                    className="mc-card"
+                                    style={{ background: "#fff", border: "1px solid #e3e3e0", borderRadius: 20, overflow: "hidden", display: "flex", flexDirection: "column" }}
+                                >
+                                    {/* Imagen */}
+                                    <div style={{ position: "relative", height: 176, overflow: "hidden", background: "linear-gradient(135deg,#fff2f2,#fef9ee)" }}>
+                                        {curso.imagen
+                                            ? <img src={`/storage/${curso.imagen}`} alt={curso.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                            : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}><BookOpen size={48} color="rgba(245,48,3,.12)" /></div>
+                                        }
+                                        {/* Número decorativo */}
+                                        <span style={{ position: "absolute", right: 12, bottom: 4, fontSize: 52, fontWeight: 900, fontFamily: "'Playfair Display', serif", color: "rgba(245,48,3,.07)", lineHeight: 1, userSelect: "none" }}>
+                                            {String(i + 1).padStart(2, "0")}
+                                        </span>
+                                        {/* Badge estado */}
+                                        {curso.estado && (
+                                            <span style={{ position: "absolute", top: 10, right: 10, background: "rgba(10,31,22,.9)", color: "#4caf7d", fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 999, backdropFilter: "blur(4px)" }}>
+                                                {curso.estado}
+                                            </span>
+                                        )}
+                                        {/* Badge "En progreso" */}
+                                        <span style={{ position: "absolute", top: 10, left: 10, background: "rgba(245,48,3,.9)", color: "#fff", fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 999, backdropFilter: "blur(4px)" }}>
+                                            Inscrito
+                                        </span>
+                                    </div>
+
+                                    {/* Body */}
+                                    <div style={{ padding: "20px", flex: 1, display: "flex", flexDirection: "column" }}>
+                                        <h2 style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 600, lineHeight: 1.3, color: "#1b1b18" }}>{curso.titulo}</h2>
+                                        <p style={{ margin: "0 0 18px", fontSize: 13, color: "#706f6c", lineHeight: 1.6, flex: 1, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                                            {curso.descripcion}
+                                        </p>
+
+                                        {/* CTA → VerCurso.tsx /curso/:id */}
+                                        <div style={{ borderTop: "1px solid rgba(227,227,224,.6)", paddingTop: 14 }}>
+                                            <a href={`/curso/${curso.id}`} style={{ textDecoration: "none", display: "block" }}>
+                                                <button
+                                                    className="mc-btn-red"
+                                                    style={{ ...btnRed, width: "100%", justifyContent: "center" }}
+                                                >
+                                                    <Play size={12} /> Continuar curso
+                                                </button>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
+                    )}
+                </main>
+
+                {/* ══ FOOTER ══ */}
+                <footer style={{ borderTop: "1px solid rgba(227,227,224,.6)", padding: "20px 24px" }}>
+                    <div style={{ maxWidth: 1152, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#706f6c" }}>
+                            <div style={{ width: 20, height: 20, borderRadius: 6, background: "#f53003", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <GraduationCap size={11} color="#fff" />
+                            </div>
+                            EduPlatform © {new Date().getFullYear()}
+                        </div>
+                        <a href="/" style={{ textDecoration: "none" }}>
+                            <button className="mc-btn-out" style={{ ...btnOutline, fontSize: 12 }}>
+                                <Home size={12} /> Volver al inicio
                             </button>
                         </a>
                     </div>
-                </div>
-            </header>
-
-            {/* ── STATS ─────────────────────────────────────────────────────── */}
-            <div style={s.statsBar}>
-                <span style={s.statChip}>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-                    </svg>
-                    {cursos.length} cursos inscritos
-                </span>
+                </footer>
             </div>
-
-            {/* ── CONTENIDO ─────────────────────────────────────────────────── */}
-            <main style={s.main}>
-                {cursos.length === 0 ? (
-                    <div style={s.emptyState}>
-                        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#2e3050" strokeWidth="1.2">
-                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-                        </svg>
-                        <p style={s.emptyTitle}>Aún no estás inscrito en ningún curso</p>
-                        <p style={s.emptySubtitle}>Explora el catálogo y comienza tu aprendizaje en VR</p>
-                        <a href="/cursos" style={{ textDecoration: "none" }}>
-                            <button style={s.btnPrimary} className="btn-primary">Ver cursos disponibles</button>
-                        </a>
-                    </div>
-                ) : (
-                    <div style={s.grid}>
-                        {cursos.map(curso => (
-                            <div key={curso.id} style={s.card} className="curso-card">
-                                {/* Imagen */}
-                                <div style={s.cardImgWrap}>
-                                    {curso.imagen ? (
-                                        <img
-                                            src={`/storage/${curso.imagen}`}
-                                            alt={curso.titulo}
-                                            style={s.cardImg}
-                                        />
-                                    ) : (
-                                        <div style={s.cardImgPlaceholder}>
-                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2e3050" strokeWidth="1.2">
-                                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-                                            </svg>
-                                        </div>
-                                    )}
-                                    <div style={s.cardImgOverlay} />
-                                    {curso.estado && (
-                                        <span style={s.cardBadge}>{curso.estado}</span>
-                                    )}
-                                </div>
-
-                                {/* Cuerpo */}
-                                <div style={s.cardBody}>
-                                    <h2 style={s.cardTitle}>{curso.titulo}</h2>
-                                    <p style={s.cardDesc}>{curso.descripcion}</p>
-
-                                    <div style={s.cardFooter}>
-                                        <a href={`/curso/${curso.id}`} style={{ textDecoration: "none", flex: 1 }}>
-                                            <button style={{ ...s.actionBtn, width: "100%" }} className="btn-ver">
-                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
-                                                    <polygon points="5 3 19 12 5 21 5 3" />
-                                                </svg>
-                                                Continuar curso
-                                            </button>
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </main>
-        </div>
+        </>
     );
 }
 
-// ─── Estilos ──────────────────────────────────────────────────────────────────
-const s: Record<string, React.CSSProperties> = {
-    page: {
-        fontFamily: "'DM Sans', sans-serif",
-        background: "#08090e",
-        minHeight: "100vh",
-        color: "#e2e0f5",
-    },
-    loadingWrap: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "60vh",
-        background: "#08090e",
-        gap: "16px",
-    },
-    spinner: {
-        width: "36px",
-        height: "36px",
-        border: "2px solid #1e1f2e",
-        borderTop: "2px solid #7c6fff",
-        borderRadius: "50%",
-        animation: "spin 0.8s linear infinite",
-    },
-    loadingText: { color: "#4a4b6a", fontSize: "14px" },
+// ─── Fuentes y hover CSS ──────────────────────────────────────────────────────
+const fonts = `@import url('https://fonts.bunny.net/css?family=playfair-display:700,800,900|instrument-sans:400,500,600');
+* { box-sizing: border-box; }`;
 
-    // Header
-    header: {
-        borderBottom: "1px solid #13141f",
-    },
-    headerInner: {
-        display: "flex",
-        alignItems: "flex-start",
-        justifyContent: "space-between",
-        flexWrap: "wrap",
-        gap: "20px",
-        padding: "36px 40px 28px",
-    },
-    badge: {
-        fontFamily: "'Space Mono', monospace",
-        fontSize: "10px",
-        fontWeight: 700,
-        letterSpacing: "0.12em",
-        color: "#7c6fff",
-        background: "#1a1630",
-        border: "1px solid #3d35a0",
-        padding: "3px 10px",
-        borderRadius: "4px",
-        display: "inline-block",
-        marginBottom: "14px",
-    },
-    pageTitle: {
-        fontSize: "28px",
-        fontWeight: 600,
-        color: "#e8e6ff",
-        margin: "0 0 8px",
-        lineHeight: 1.25,
-    },
-    pageSubtitle: {
-        fontSize: "14px",
-        color: "#7a78a0",
-        margin: 0,
-    },
-    headerActions: {
-        display: "flex",
-        gap: "10px",
-        alignItems: "center",
-        paddingTop: "4px",
-    },
-    btnOutline: {
-        fontFamily: "'DM Sans', sans-serif",
-        fontSize: "13px",
-        fontWeight: 500,
-        padding: "9px 18px",
-        borderRadius: "8px",
-        border: "1px solid #2a2b3d",
-        background: "#111220",
-        color: "#8b8aaa",
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        gap: "7px",
-    },
-
-    // Stats
-    statsBar: {
-        padding: "12px 40px",
-        borderBottom: "1px solid #0f1020",
-        display: "flex",
-        gap: "10px",
-    },
-    statChip: {
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "6px",
-        fontSize: "12px",
-        color: "#5a5880",
-        background: "#0f1020",
-        border: "1px solid #1e1f30",
-        padding: "4px 12px",
-        borderRadius: "20px",
-    },
-
-    // Main
-    main: { padding: "32px 40px 60px" },
-    grid: {
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-        gap: "20px",
-    },
-
-    // Card
-    card: {
-        background: "#0d0e17",
-        border: "1px solid #1e1f2e",
-        borderRadius: "14px",
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
-    },
-    cardImgWrap: {
-        position: "relative",
-        width: "100%",
-        height: "160px",
-        background: "#08090e",
-        flexShrink: 0,
-        overflow: "hidden",
-    },
-    cardImg: { width: "100%", height: "100%", objectFit: "cover" },
-    cardImgPlaceholder: {
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#0a0b14",
-    },
-    cardImgOverlay: {
-        position: "absolute",
-        inset: 0,
-        background: "linear-gradient(to top, #0d0e17 0%, transparent 60%)",
-    },
-    cardBadge: {
-        position: "absolute",
-        top: "10px",
-        right: "10px",
-        fontFamily: "'Space Mono', monospace",
-        fontSize: "9px",
-        fontWeight: 700,
-        letterSpacing: "0.1em",
-        color: "#4caf7d",
-        background: "#0a1f16",
-        border: "1px solid #1a3328",
-        padding: "3px 8px",
-        borderRadius: "4px",
-        textTransform: "uppercase",
-    },
-    cardBody: {
-        padding: "18px 20px 20px",
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-    },
-    cardTitle: {
-        fontSize: "15px",
-        fontWeight: 600,
-        color: "#d4d0ff",
-        margin: "0 0 8px",
-        lineHeight: 1.3,
-    },
-    cardDesc: {
-        fontSize: "13px",
-        color: "#5a5880",
-        margin: "0 0 18px",
-        lineHeight: 1.6,
-        flex: 1,
-        display: "-webkit-box",
-        WebkitLineClamp: 3,
-        WebkitBoxOrient: "vertical",
-        overflow: "hidden",
-    },
-    cardFooter: { display: "flex", gap: "8px" },
-    actionBtn: {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "7px",
-        padding: "9px 16px",
-        borderRadius: "8px",
-        border: "1px solid #3d35a0",
-        background: "#1a1630",
-        color: "#9d8fff",
-        cursor: "pointer",
-        fontSize: "12px",
-        fontFamily: "'DM Sans', sans-serif",
-        fontWeight: 500,
-    },
-
-    // Empty state
-    emptyState: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "80px 0",
-        gap: "12px",
-        textAlign: "center",
-    },
-    emptyTitle: { color: "#4a4b6a", fontSize: "16px", fontWeight: 500, margin: 0 },
-    emptySubtitle: { color: "#2e3050", fontSize: "13px", margin: "0 0 8px" },
-    btnPrimary: {
-        fontFamily: "'DM Sans', sans-serif",
-        fontSize: "13px",
-        fontWeight: 500,
-        padding: "10px 22px",
-        borderRadius: "8px",
-        border: "1px solid #3d35a0",
-        background: "#1a1630",
-        color: "#9d8fff",
-        cursor: "pointer",
-        marginTop: "8px",
-    },
-};
-
-const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .btn-outline:hover { background: #1a1b2e !important; color: #d4d0ff !important; border-color: #3d3e5e !important; }
-  .curso-card:hover { border-color: #2a2b4a !important; }
-  .btn-ver:hover { background: #221c40 !important; color: #c4b8ff !important; }
-  .btn-primary:hover { background: #221c40 !important; color: #c4b8ff !important; }
+const hoverCss = `
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .mc-card { transition: transform .2s, border-color .2s, box-shadow .2s; }
+    .mc-card:hover { transform: translateY(-4px); border-color: rgba(245,48,3,.3) !important; box-shadow: 0 20px 40px rgba(245,48,3,.07) !important; }
+    .mc-btn-red { transition: background .15s; }
+    .mc-btn-red:hover { background: #d42800 !important; }
+    .mc-btn-out { transition: border-color .15s, color .15s, background .15s; }
+    .mc-btn-out:hover { border-color: rgba(245,48,3,.4) !important; color: #f53003 !important; background: rgba(245,48,3,.04) !important; }
 `;

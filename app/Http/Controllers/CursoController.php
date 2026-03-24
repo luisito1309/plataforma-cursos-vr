@@ -23,16 +23,16 @@ class CursoController extends Controller
         $imagenPath = $request->file('imagen')->store('cursos','public');
     }
 
-    $user = $request->user();
-    if (! $user || ! in_array($user->role, ['admin', 'docente'])) {
-        return response()->json(['error' => 'No autorizado para crear cursos'], 403);
-    }
+    $miniJuego = $request->input('mini_juego');
+    $miniJuego = ($miniJuego !== null && $miniJuego !== '') ? $miniJuego : null;
+
     $curso = Curso::create([
         'titulo' => $request->titulo,
         'descripcion' => $request->descripcion,
-        'docente_id' => $user->id,
+        'docente_id' => 1,
         'estado' => 'pendiente',
-        'imagen' => $imagenPath
+        'imagen' => $imagenPath,
+        'mini_juego' => $miniJuego,
     ]);
 
     return response()->json($curso);
@@ -53,39 +53,31 @@ class CursoController extends Controller
     public function update(Request $request, $id)
     {
         $curso = Curso::find($id);
-        if (! $curso) {
-            return response()->json(['mensaje' => 'Curso no encontrado'], 404);
+
+        if(!$curso){
+            return response()->json(['mensaje'=>'Curso no encontrado']);
         }
-        $user = $request->user();
-        if (! $user || ! in_array($user->role, ['admin', 'docente'])) {
-            return response()->json(['error' => 'No autorizado'], 403);
-        }
-        if ($user->role === 'docente' && $curso->docente_id != $user->id) {
-            return response()->json(['error' => 'No autorizado para editar este curso'], 403);
-        }
+
         $curso->update($request->all());
+
         return response()->json($curso);
     }
 
     public function destroy($id)
     {
         $curso = Curso::find($id);
-        if (! $curso) {
-            return response()->json(['mensaje' => 'Curso no encontrado'], 404);
+
+        if(!$curso){
+            return response()->json(['mensaje'=>'Curso no encontrado']);
         }
-        $user = $request->user();
-        if (! $user || ! in_array($user->role, ['admin', 'docente'])) {
-            return response()->json(['error' => 'No autorizado'], 403);
-        }
-        if ($user->role === 'docente' && $curso->docente_id != $user->id) {
-            return response()->json(['error' => 'No autorizado para eliminar este curso'], 403);
-        }
+
         $curso->delete();
-        return response()->json(['mensaje' => 'Curso eliminado']);
+
+        return response()->json(['mensaje'=>'Curso eliminado']);
     }
     public function modulos($id)
 {
-    $curso = Curso::with('modulos.videos')->find($id);
+    $curso = Curso::with('modulos.videos', 'modulos.documentos')->find($id);
 
     if(!$curso){
         return response()->json([]);

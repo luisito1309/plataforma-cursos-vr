@@ -1,59 +1,60 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
-| Página principal: redirige a login o según rol
+| Página principal
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', function () {
-    if (! auth()->check()) {
-        return redirect()->route('login');
-    }
-    $user = auth()->user();
-    if ($user->role === 'admin') {
-        return redirect()->route('dashboard');
-    }
-    if ($user->role === 'docente') {
-        return redirect()->route('cursos.index');
-    }
-    return redirect()->route('mis-cursos');
-})->name('home');
+Route::inertia('/', 'welcome', [
+    'canRegister' => Features::enabled(Features::registration()),
+])->name('home');
 
 /*
 |--------------------------------------------------------------------------
-| Dashboard (solo rol admin)
+| Dashboard (solo admin)
 |--------------------------------------------------------------------------
 */
 
 Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
-    Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, '__invoke'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 });
 
 /*
 |--------------------------------------------------------------------------
-| Cursos (docente y estudiante autenticados)
+| Página de cursos
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/cursos', function () {
-        return Inertia::render('Cursos');
-    })->name('cursos.index');
+Route::get('/cursos', function () {
+    return Inertia::render('Cursos');
+});
 
-    Route::get('/mis-cursos', function () {
-        return Inertia::render('MisCursos');
-    })->name('mis-cursos');
+/*
+|--------------------------------------------------------------------------
+| Página MIS CURSOS
+|--------------------------------------------------------------------------
+*/
 
-    Route::get('/curso/{id}', function ($id) {
-        return Inertia::render('VerCurso', [
-            'id' => (int) $id,
-        ]);
-    })->name('curso.show');
+Route::get('/mis-cursos', function () {
+    return Inertia::render('MisCursos');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Página VER CURSO
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/curso/{id}', function ($id) {
+    return Inertia::render('VerCurso', [
+        'id' => $id
+    ]);
 });
 
 /*

@@ -1,26 +1,26 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Models\Curso;
 use App\Models\Inscripcion;
 use App\Models\User;
-use Inertia\Inertia;
-use Inertia\Response;
+use Illuminate\Http\JsonResponse;
 
 class DashboardController extends Controller
 {
     /**
-     * Dashboard solo para admin: estadísticas y listado de cursos.
+     * Estadísticas para el dashboard (solo admin).
      */
-    public function index(): Response
+    public function index(): JsonResponse
     {
         $totalCursos = Curso::count();
         $totalUsuarios = User::count();
         $totalInscripciones = Inscripcion::count();
         $cursos = Curso::orderBy('id', 'desc')->get();
 
-        return Inertia::render('dashboard', [
+        return response()->json([
             'estadisticas' => [
                 'total_cursos' => $totalCursos,
                 'total_usuarios' => $totalUsuarios,

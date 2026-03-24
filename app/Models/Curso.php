@@ -15,7 +15,8 @@ class Curso extends Model
         'descripcion',
         'docente_id',
         'estado',
-        'imagen'
+        'imagen',
+        'mini_juego',
     ];
 
     public function modulos()

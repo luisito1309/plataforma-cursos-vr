@@ -26,25 +26,6 @@ class User extends Authenticatable
         'role',
     ];
 
-    public const ROL_ADMIN = 'admin';
-    public const ROL_DOCENTE = 'docente';
-    public const ROL_ESTUDIANTE = 'estudiante';
-
-    public function isAdmin(): bool
-    {
-        return $this->role === self::ROL_ADMIN;
-    }
-
-    public function isDocente(): bool
-    {
-        return $this->role === self::ROL_DOCENTE;
-    }
-
-    public function isEstudiante(): bool
-    {
-        return $this->role === self::ROL_ESTUDIANTE;
-    }
-
     /**
      * The attributes that should be hidden for serialization.
      *

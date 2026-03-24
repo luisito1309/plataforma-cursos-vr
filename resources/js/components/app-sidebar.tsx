@@ -1,5 +1,5 @@
-import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { BookOpen, FolderGit2, Home, LayoutGrid, Library, User } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -13,21 +13,10 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
+import { dashboard, home } from '@/routes';
+import { edit as profileEdit } from '@/routes/profile';
 import type { NavItem } from '@/types';
-
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Cursos',
-        href: '/cursos',
-        icon: BookOpen,
-    },
-];
+import type { UserRole } from '@/types/auth';
 
 const footerNavItems: NavItem[] = [
     {
@@ -42,14 +31,34 @@ const footerNavItems: NavItem[] = [
     },
 ];
 
+function getMainNavItems(role: UserRole | undefined): NavItem[] {
+    if (role === 'admin') {
+        return [
+            { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
+            { title: 'Cursos', href: '/cursos', icon: BookOpen },
+        ];
+    }
+    return [
+        { title: 'Home', href: home(), icon: Home },
+        { title: 'Cursos', href: '/cursos', icon: BookOpen },
+        { title: 'Mis Cursos', href: '/mis-cursos', icon: Library },
+        { title: 'Perfil', href: profileEdit(), icon: User },
+    ];
+}
+
 export function AppSidebar() {
+    const { auth } = usePage().props;
+    const role = (auth?.user as { role?: UserRole } | null)?.role ?? 'estudiante';
+    const mainNavItems = getMainNavItems(role);
+    const logoHref = role === 'admin' ? dashboard() : home();
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                            <Link href={logoHref} prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>

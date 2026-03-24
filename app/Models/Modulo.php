@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Curso;
 use App\Models\Video;
+use App\Models\Documento;
 
 class Modulo extends Model
 {
@@ -28,4 +29,9 @@ class Modulo extends Model
         return $this->hasMany(Video::class);
     }
 
+    // Relación con documentos
+    public function documentos()
+    {
+        return $this->hasMany(Documento::class);
+    }
 }

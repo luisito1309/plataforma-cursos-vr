@@ -1,7 +1,24 @@
 import React, { useEffect, useState } from "react";
-import { usePage } from "@inertiajs/react";
 import axios from "axios";
-import type { UserRole } from "@/types/auth";
+import {
+    BookOpen, GraduationCap, Home, Plus, X,
+    Upload, Edit2, Trash2, UserPlus, Play, Monitor,
+    Gamepad2, Glasses, Cpu, Zap,
+} from "lucide-react";
+
+// ─── Catálogo de mini juegos (escalable) ─────────────────────────────────────
+type MiniJuegoOption = { value: string; label: string; icon: React.ReactNode; tag: string; };
+
+const MINI_JUEGOS: MiniJuegoOption[] = [
+    { value: "", label: "Sin mini juego", icon: <Gamepad2 size={14} />, tag: "—" },
+    { value: "monster_friend", label: "Monster or Friend", icon: <Gamepad2 size={14} />, tag: "WEB" },
+    { value: "pingpong", label: "Ping Pong (3D)", icon: <Monitor size={14} />, tag: "3D" },
+    { value: "konterball", label: "Konterball", icon: <Glasses size={14} />, tag: "WEBXR" },
+    // Futuros juegos — descomenta para activar:
+    // { value: "vr_escape",   label: "Escape Room VR",     icon: <Glasses  size={14} />, tag: "VR"   },
+    // { value: "sim_fisica",  label: "Simulación Física",  icon: <Cpu      size={14} />, tag: "SIM"  },
+    // { value: "quiz_3d",     label: "Quiz Interactivo",   icon: <Zap      size={14} />, tag: "QUIZ" },
+];
 
 interface Curso {
     id: number;
@@ -10,629 +27,340 @@ interface Curso {
     imagen?: string;
     estado?: string;
     docente_id?: number;
+    mini_juego?: string | null;
 }
 
-const canEditCourses = (role: UserRole | undefined) =>
-    role === "admin" || role === "docente";
-const canEnroll = (role: UserRole | undefined) => role === "estudiante";
+// ─── Tokens de estilo ────────────────────────────────────────────────────────
+const btnRed: React.CSSProperties = {
+    background: "#f53003", color: "#fff", border: "none",
+    borderRadius: "10px", padding: "0 18px", height: "36px",
+    fontSize: "13px", fontFamily: "'Instrument Sans', sans-serif",
+    fontWeight: 600, cursor: "pointer", display: "inline-flex",
+    alignItems: "center", gap: "7px",
+};
 
+const btnOutline: React.CSSProperties = {
+    background: "#fff", color: "#706f6c",
+    border: "1px solid #d1d0cc", borderRadius: "10px",
+    padding: "0 16px", height: "36px", fontSize: "13px",
+    fontFamily: "'Instrument Sans', sans-serif",
+    fontWeight: 500, cursor: "pointer", display: "inline-flex",
+    alignItems: "center", gap: "7px",
+};
+
+const inputSt: React.CSSProperties = {
+    background: "#FDFDFC", border: "1px solid #d1d0cc",
+    borderRadius: "10px", padding: "10px 14px", color: "#1b1b18",
+    fontSize: "14px", fontFamily: "'Instrument Sans', sans-serif",
+    width: "100%", outline: "none",
+};
+
+const labelSt: React.CSSProperties = {
+    fontSize: "11px", fontWeight: 600, color: "#706f6c",
+    textTransform: "uppercase", letterSpacing: ".07em",
+};
+
+// ─── Componente ──────────────────────────────────────────────────────────────
 export default function Cursos() {
-    const { auth } = usePage().props as { auth: { user?: { role: UserRole } } };
-    const role = auth.user?.role;
     const [cursos, setCursos] = useState<Curso[]>([]);
     const [titulo, setTitulo] = useState("");
     const [descripcion, setDescripcion] = useState("");
     const [imagen, setImagen] = useState<File | null>(null);
+    const [miniJuego, setMiniJuego] = useState("");
     const [mostrarForm, setMostrarForm] = useState(false);
-
-    // Modal editar
     const [modalEditar, setModalEditar] = useState<Curso | null>(null);
     const [editTitulo, setEditTitulo] = useState("");
     const [editDescripcion, setEditDescripcion] = useState("");
 
-    useEffect(() => {
-        obtenerCursos();
-    }, []);
+    useEffect(() => { cargar(); }, []);
 
-    const obtenerCursos = () => {
+    const cargar = () =>
         axios.get("/api/cursos")
-            .then(response => setCursos(response.data))
-            .catch(error => console.error("Error cargando cursos:", error));
-    };
+            .then(r => setCursos(r.data))
+            .catch(e => console.error(e));
 
     const crearCurso = () => {
         if (!titulo.trim() || !descripcion.trim()) return;
-        const formData = new FormData();
-        formData.append("titulo", titulo);
-        formData.append("descripcion", descripcion);
-        if (imagen) formData.append("imagen", imagen);
-
-        axios.post("/api/cursos", formData, { headers: { "Content-Type": "multipart/form-data" } })
+        const fd = new FormData();
+        fd.append("titulo", titulo);
+        fd.append("descripcion", descripcion);
+        if (imagen) fd.append("imagen", imagen);
+        if (miniJuego) fd.append("mini_juego", miniJuego);
+        axios.post("/api/cursos", fd, { headers: { "Content-Type": "multipart/form-data" } })
             .then(() => {
-                obtenerCursos();
-                setTitulo("");
-                setDescripcion("");
-                setImagen(null);
+                cargar();
+                setTitulo(""); setDescripcion(""); setImagen(null);
+                setMiniJuego("");
                 setMostrarForm(false);
-                const fi = document.getElementById("imagenInput") as HTMLInputElement;
-                if (fi) fi.value = "";
             })
-            .catch(error => console.error("Error creando curso:", error));
+            .catch(e => console.error(e));
     };
 
-    const inscribirse = (curso_id: number) => {
-        axios.post("/api/inscribirse", { curso_id })
-            .then(() => alert("Te inscribiste al curso"))
-            .catch(error => console.error("Error al inscribirse:", error));
-    };
+    const inscribirse = (id: number) =>
+        axios.post("/api/inscribirse", { curso_id: id })
+            .then(() => alert("¡Te inscribiste al curso!"))
+            .catch(e => console.error(e));
 
-    const eliminarCurso = (id: number) => {
+    const eliminar = (id: number) => {
         if (!window.confirm("¿Eliminar curso?")) return;
-        axios.delete(`/api/cursos/${id}`)
-            .then(() => obtenerCursos())
-            .catch(error => console.error("Error eliminando curso:", error));
-    };
-
-    const abrirModalEditar = (curso: Curso) => {
-        setModalEditar(curso);
-        setEditTitulo(curso.titulo);
-        setEditDescripcion(curso.descripcion);
+        axios.delete(`/api/cursos/${id}`).then(() => cargar()).catch(e => console.error(e));
     };
 
     const confirmarEditar = () => {
         if (!modalEditar || !editTitulo.trim() || !editDescripcion.trim()) return;
         axios.put(`/api/cursos/${modalEditar.id}`, { titulo: editTitulo, descripcion: editDescripcion })
-            .then(() => {
-                setModalEditar(null);
-                obtenerCursos();
-            })
-            .catch(error => console.error("Error editando curso:", error));
+            .then(() => { setModalEditar(null); cargar(); })
+            .catch(e => console.error(e));
     };
 
+    // Helper para obtener info del juego por value
+    const getJuego = (value: string) => MINI_JUEGOS.find(j => j.value === value);
+
     return (
-        <div style={s.page}>
-            <style>{css}</style>
+        <>
+            <style>{`
+                @import url('https://fonts.bunny.net/css?family=playfair-display:700,800,900|instrument-sans:400,500,600');
+                * { box-sizing: border-box; }
+                .c-card { transition: transform .2s, border-color .2s, box-shadow .2s; }
+                .c-card:hover { transform: translateY(-4px); border-color: rgba(245,48,3,.3) !important; box-shadow: 0 20px 40px rgba(245,48,3,.07) !important; }
+                .c-btn-red:hover { background: #d42800 !important; }
+                .c-btn-out:hover { border-color: rgba(245,48,3,.4) !important; color: #f53003 !important; background: rgba(245,48,3,.04) !important; }
+                .c-del:hover { background: rgba(245,48,3,.12) !important; color: #d42800 !important; }
+                .c-inp:focus { border-color: rgba(245,48,3,.5) !important; box-shadow: 0 0 0 3px rgba(245,48,3,.08); }
+            `}</style>
 
-            {/* ── MODAL: Editar curso ────────────────────────────────────────── */}
-            {modalEditar && (
-                <div style={s.overlay} onClick={() => setModalEditar(null)}>
-                    <div style={s.modal} onClick={e => e.stopPropagation()}>
-                        <h3 style={s.modalTitle}>Editar curso</h3>
-                        <label style={s.label}>Título</label>
-                        <input
-                            style={s.input}
-                            value={editTitulo}
-                            onChange={e => setEditTitulo(e.target.value)}
-                            autoFocus
-                        />
-                        <label style={s.label}>Descripción</label>
-                        <textarea
-                            style={{ ...s.input, resize: "vertical", minHeight: "90px" }}
-                            value={editDescripcion}
-                            onChange={e => setEditDescripcion(e.target.value)}
-                        />
-                        <div style={s.modalBtns}>
-                            <button style={s.btnCancel} onClick={() => setModalEditar(null)}>Cancelar</button>
-                            <button style={s.btnPrimary} onClick={confirmarEditar}>Guardar</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <div style={{ fontFamily: "'Instrument Sans', sans-serif", background: "#FDFDFC", minHeight: "100vh", color: "#1b1b18" }}>
 
-            {/* ── HEADER ────────────────────────────────────────────────────── */}
-            <header style={s.header}>
-                <div style={s.headerInner}>
-                    <div>
-                        <span style={s.badge}>VR PLATFORM</span>
-                        <h1 style={s.pageTitle}>Plataforma de Cursos VR</h1>
-                        <p style={s.pageSubtitle}>Explora, crea y gestiona tus cursos de realidad virtual</p>
-                    </div>
-                    <div style={s.headerActions}>
-                        {canEnroll(role) && (
-                            <a href="/mis-cursos" style={{ textDecoration: "none" }}>
-                                <button style={s.btnOutline} className="btn-outline">Mis Cursos</button>
-                            </a>
-                        )}
-                        {canEditCourses(role) && (
-                            <button
-                                style={s.btnPrimaryLg}
-                                className="btn-primary-lg"
-                                onClick={() => setMostrarForm(!mostrarForm)}
-                            >
-                                {mostrarForm ? "✕ Cancelar" : "+ Nuevo Curso"}
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* ── FORMULARIO CREAR CURSO (solo docente/admin) ───────────────── */}
-                {canEditCourses(role) && mostrarForm && (
-                    <div style={s.formPanel}>
-                        <div style={s.formGrid}>
-                            <div style={s.formGroup}>
-                                <label style={s.label}>Título del curso</label>
-                                <input
-                                    style={s.inputDark}
-                                    placeholder="Ej: Introducción a VR con Unity"
-                                    value={titulo}
-                                    onChange={e => setTitulo(e.target.value)}
-                                    autoFocus
-                                />
+                {/* ══ MODAL EDITAR ══ */}
+                {modalEditar && (
+                    <div
+                        onClick={() => setModalEditar(null)}
+                        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}
+                    >
+                        <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "20px", padding: "32px", width: "100%", maxWidth: "480px", border: "1px solid #e3e3e0", boxShadow: "0 24px 60px rgba(0,0,0,.12)", display: "flex", flexDirection: "column", gap: "16px" }}>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700, fontFamily: "'Playfair Display', serif" }}>Editar curso</h3>
+                                <button onClick={() => setModalEditar(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#706f6c" }}><X size={18} /></button>
                             </div>
-                            <div style={s.formGroup}>
-                                <label style={s.label}>Descripción</label>
-                                <textarea
-                                    style={{ ...s.inputDark, resize: "vertical", minHeight: "80px" }}
-                                    placeholder="Describe el contenido del curso..."
-                                    value={descripcion}
-                                    onChange={e => setDescripcion(e.target.value)}
-                                />
+                            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                <label style={labelSt}>Título</label>
+                                <input className="c-inp" style={inputSt} value={editTitulo} onChange={e => setEditTitulo(e.target.value)} autoFocus />
                             </div>
-                            <div style={s.formGroup}>
-                                <label style={s.label}>Imagen del curso</label>
-                                <label style={s.fileLabel} className="file-label">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <polyline points="17 8 12 3 7 8" />
-                                        <line x1="12" y1="3" x2="12" y2="15" />
-                                    </svg>
-                                    {imagen ? imagen.name : "Seleccionar imagen"}
-                                    <input
-                                        id="imagenInput"
-                                        type="file"
-                                        accept="image/*"
-                                        style={{ display: "none" }}
-                                        onChange={e => setImagen(e.target.files?.[0] ?? null)}
-                                    />
-                                </label>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                <label style={labelSt}>Descripción</label>
+                                <textarea className="c-inp" style={{ ...inputSt, resize: "vertical", minHeight: "100px" }} value={editDescripcion} onChange={e => setEditDescripcion(e.target.value)} />
                             </div>
-                        </div>
-                        <div style={s.formFooter}>
-                            <button style={s.btnPrimary} onClick={crearCurso}>Crear Curso</button>
+                            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                                <button className="c-btn-out" onClick={() => setModalEditar(null)} style={btnOutline}>Cancelar</button>
+                                <button className="c-btn-red" onClick={confirmarEditar} style={btnRed}>Guardar cambios</button>
+                            </div>
                         </div>
                     </div>
                 )}
-            </header>
 
-            {/* ── STATS ─────────────────────────────────────────────────────── */}
-            <div style={s.statsBar}>
-                <span style={s.statChip}>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="2" y="3" width="20" height="14" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
-                    </svg>
-                    {cursos.length} cursos disponibles
-                </span>
-            </div>
-
-            {/* ── GRID DE CURSOS ─────────────────────────────────────────────── */}
-            <main style={s.main}>
-                {cursos.length === 0 ? (
-                    <div style={s.emptyState}>
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2e3050" strokeWidth="1.2">
-                            <rect x="2" y="3" width="20" height="14" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
-                        </svg>
-                        <p style={s.emptyText}>No hay cursos aún. ¡Crea el primero!</p>
+                {/* ══ NAV ══ */}
+                <header style={{ position: "sticky", top: 0, zIndex: 50, borderBottom: "1px solid rgba(227,227,224,.7)", background: "rgba(253,253,252,.92)", backdropFilter: "blur(8px)" }}>
+                    <div style={{ maxWidth: 1152, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <div style={{ width: 32, height: 32, borderRadius: 10, background: "#f53003", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <GraduationCap size={16} color="#fff" />
+                            </div>
+                            <span style={{ fontSize: 15, fontWeight: 600 }}>EduPlatform</span>
+                        </div>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                            <a href="/" style={{ textDecoration: "none" }}>
+                                <button className="c-btn-out" style={btnOutline}><Home size={14} /> Home</button>
+                            </a>
+                            <a href="/mis-cursos" style={{ textDecoration: "none" }}>
+                                <button className="c-btn-out" style={btnOutline}>Mis Cursos</button>
+                            </a>
+                            <button className="c-btn-red" onClick={() => setMostrarForm(!mostrarForm)} style={btnRed}>
+                                {mostrarForm ? <><X size={14} /> Cancelar</> : <><Plus size={14} /> Nuevo Curso</>}
+                            </button>
+                        </div>
                     </div>
-                ) : (
-                    <div style={s.grid}>
-                        {cursos.map(curso => (
-                            <div key={`${curso.id}-${curso.titulo}`} style={s.card} className="curso-card">
-                                {/* Imagen */}
-                                <div style={s.cardImgWrap}>
-                                    {curso.imagen ? (
-                                        <img
-                                            src={`/storage/${curso.imagen}`}
-                                            alt={curso.titulo}
-                                            style={s.cardImg}
-                                        />
-                                    ) : (
-                                        <div style={s.cardImgPlaceholder}>
-                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2e3050" strokeWidth="1.2">
-                                                <rect x="2" y="3" width="20" height="14" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
-                                            </svg>
+                </header>
+
+                {/* ══ HERO TITLE ══ */}
+                <section style={{ position: "relative", overflow: "hidden", borderBottom: "1px solid rgba(227,227,224,.6)" }}>
+                    <div style={{ position: "absolute", top: -80, right: -80, width: 400, height: 400, borderRadius: "50%", background: "rgba(245,48,3,.04)", filter: "blur(60px)", pointerEvents: "none" }} />
+                    <div style={{ position: "absolute", bottom: 0, left: -40, width: 260, height: 260, borderRadius: "50%", background: "rgba(248,184,3,.05)", filter: "blur(50px)", pointerEvents: "none" }} />
+                    <div style={{ position: "relative", maxWidth: 1152, margin: "0 auto", padding: "48px 24px 40px", display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 20 }}>
+                        <div>
+                            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 999, border: "1px solid rgba(245,48,3,.25)", background: "rgba(245,48,3,.06)", padding: "4px 14px", fontSize: 12, fontWeight: 600, color: "#f53003", marginBottom: 14 }}>
+                                <Monitor size={12} /> VR PLATFORM
+                            </div>
+                            <h1 style={{ margin: "0 0 8px", fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 900, fontFamily: "'Playfair Display', serif", lineHeight: 1.1 }}>
+                                Plataforma de Cursos VR
+                            </h1>
+                            <p style={{ margin: 0, fontSize: 15, color: "#706f6c" }}>Explora, crea y gestiona tus cursos de realidad virtual</p>
+                        </div>
+                        <div style={{ background: "#fff", border: "1px solid #e3e3e0", borderRadius: 14, padding: "14px 22px", boxShadow: "0 2px 8px rgba(0,0,0,.04)", display: "flex", alignItems: "center", gap: 10 }}>
+                            <BookOpen size={16} color="#f53003" />
+                            <span style={{ fontSize: 13, color: "#706f6c" }}>
+                                <b style={{ color: "#1b1b18", fontSize: 22, fontFamily: "'Playfair Display', serif" }}>{cursos.length}</b> cursos disponibles
+                            </span>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ══ FORM CREAR ══ */}
+                {mostrarForm && (
+                    <div style={{ borderBottom: "1px solid rgba(227,227,224,.6)", background: "#fff" }}>
+                        <div style={{ maxWidth: 1152, margin: "0 auto", padding: "28px 24px" }}>
+                            <h3 style={{ margin: "0 0 20px", fontSize: 16, fontWeight: 700, fontFamily: "'Playfair Display', serif" }}>Crear nuevo curso</h3>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 20 }}>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                    <label style={labelSt}>Título del curso</label>
+                                    <input className="c-inp" style={inputSt} placeholder="Ej: Introducción a VR con Unity" value={titulo} onChange={e => setTitulo(e.target.value)} autoFocus />
+                                </div>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                    <label style={labelSt}>Descripción</label>
+                                    <textarea className="c-inp" style={{ ...inputSt, resize: "vertical", minHeight: 80 }} placeholder="Describe el contenido del curso..." value={descripcion} onChange={e => setDescripcion(e.target.value)} />
+                                </div>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                    <label style={labelSt}>Imagen del curso</label>
+                                    <label style={{ display: "flex", alignItems: "center", gap: 8, background: "#FDFDFC", border: "1px dashed #d1d0cc", borderRadius: 10, padding: "12px 14px", color: "#706f6c", fontSize: 13, cursor: "pointer" }}>
+                                        <Upload size={14} />
+                                        {imagen ? imagen.name : "Seleccionar imagen"}
+                                        <input id="imagenInput" type="file" accept="image/*" style={{ display: "none" }} onChange={e => setImagen(e.target.files?.[0] ?? null)} />
+                                    </label>
+                                </div>
+
+                                {/* ── Mini Juego selector ── */}
+                                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                    <label style={labelSt}>Mini Juego</label>
+                                    <div style={{ position: "relative" }}>
+                                        <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: miniJuego ? "#f53003" : "#a1a09a", pointerEvents: "none", display: "flex", alignItems: "center" }}>
+                                            {getJuego(miniJuego)?.icon ?? <Gamepad2 size={14} />}
+                                        </div>
+                                        <select
+                                            className="c-inp"
+                                            value={miniJuego}
+                                            onChange={e => setMiniJuego(e.target.value)}
+                                            style={{ ...inputSt, paddingLeft: 36, appearance: "none", cursor: "pointer", color: miniJuego ? "#1b1b18" : "#706f6c" }}
+                                        >
+                                            {MINI_JUEGOS.map(juego => (
+                                                <option key={juego.value} value={juego.value}>
+                                                    {juego.label}{juego.tag !== "—" ? ` [${juego.tag}]` : ""}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#a1a09a" }}>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
+                                        </div>
+                                    </div>
+                                    {miniJuego && (
+                                        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "#f53003", fontWeight: 600 }}>
+                                            {getJuego(miniJuego)?.icon}
+                                            <span>{getJuego(miniJuego)?.label}</span>
+                                            <span style={{ background: "rgba(245,48,3,.1)", borderRadius: 999, padding: "1px 7px", fontSize: 10 }}>
+                                                {getJuego(miniJuego)?.tag}
+                                            </span>
                                         </div>
                                     )}
-                                    <div style={s.cardImgOverlay} />
-                                    {curso.estado && (
-                                        <span style={s.cardBadge}>{curso.estado}</span>
-                                    )}
-                                </div>
-
-                                {/* Contenido */}
-                                <div style={s.cardBody}>
-                                    <h2 style={s.cardTitle}>{curso.titulo}</h2>
-                                    <p style={s.cardDesc}>{curso.descripcion}</p>
-
-                                    {/* Acciones */}
-                                    <div style={s.cardActions}>
-                                        <a href={`/curso/${curso.id}`} style={{ textDecoration: "none", flex: 1 }}>
-                                            <button style={{ ...s.actionBtn, ...s.actionBtnPrimary, width: "100%" }} className="action-btn-primary">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                                                    <polygon points="5 3 19 12 5 21 5 3" />
-                                                </svg>
-                                                Ver Curso
-                                            </button>
-                                        </a>
-                                        {canEnroll(role) && (
-                                            <button
-                                                onClick={() => inscribirse(curso.id)}
-                                                style={{ ...s.actionBtn, ...s.actionBtnGreen }}
-                                                className="action-btn-green"
-                                            >
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" />
-                                                </svg>
-                                            </button>
-                                        )}
-                                        {canEditCourses(role) && (
-                                            <>
-                                                <button
-                                                    onClick={() => abrirModalEditar(curso)}
-                                                    style={{ ...s.actionBtn, ...s.actionBtnEdit }}
-                                                    className="action-btn-edit"
-                                                >
-                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                                    </svg>
-                                                </button>
-                                                <button
-                                                    onClick={() => eliminarCurso(curso.id)}
-                                                    style={{ ...s.actionBtn, ...s.actionBtnDelete }}
-                                                    className="action-btn-delete"
-                                                >
-                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                        <polyline points="3 6 5 6 21 6" />
-                                                        <path d="M19 6l-1 14H6L5 6" />
-                                                        <path d="M10 11v6M14 11v6" />
-                                                    </svg>
-                                                </button>
-                                            </>
-                                        )}
-                                    </div>
                                 </div>
                             </div>
-                        ))}
+                            <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
+                                <button className="c-btn-red" onClick={crearCurso} style={btnRed}><Plus size={14} /> Crear Curso</button>
+                            </div>
+                        </div>
                     </div>
                 )}
-            </main>
-        </div>
+
+                {/* ══ GRID ══ */}
+                <main style={{ maxWidth: 1152, margin: "0 auto", padding: "36px 24px 72px" }}>
+                    {cursos.length === 0 ? (
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "100px 0", gap: 16, textAlign: "center" }}>
+                            <div style={{ width: 64, height: 64, borderRadius: 20, background: "rgba(245,48,3,.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <BookOpen size={28} color="rgba(245,48,3,.3)" />
+                            </div>
+                            <p style={{ color: "#706f6c", fontSize: 15, margin: 0 }}>No hay cursos aún. ¡Crea el primero!</p>
+                            <button className="c-btn-red" onClick={() => setMostrarForm(true)} style={btnRed}><Plus size={14} /> Nuevo Curso</button>
+                        </div>
+                    ) : (
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
+                            {cursos.map((curso, i) => {
+                                const juego = curso.mini_juego ? getJuego(curso.mini_juego) : null;
+                                return (
+                                    <article key={`${curso.id}-${curso.titulo}`} className="c-card" style={{ background: "#fff", border: "1px solid #e3e3e0", borderRadius: 20, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+
+                                        {/* Imagen */}
+                                        <div style={{ position: "relative", height: 176, overflow: "hidden", background: "linear-gradient(135deg,#fff2f2,#fef9ee)" }}>
+                                            {curso.imagen
+                                                ? <img src={`/storage/${curso.imagen}`} alt={curso.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}><BookOpen size={48} color="rgba(245,48,3,.12)" /></div>
+                                            }
+                                            <span style={{ position: "absolute", right: 12, bottom: 4, fontSize: 52, fontWeight: 900, fontFamily: "'Playfair Display', serif", color: "rgba(245,48,3,.07)", lineHeight: 1, userSelect: "none" }}>
+                                                {String(i + 1).padStart(2, "0")}
+                                            </span>
+                                            {curso.estado && (
+                                                <span style={{ position: "absolute", top: 10, right: 10, background: "rgba(10,31,22,.9)", color: "#4caf7d", fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 999, backdropFilter: "blur(4px)" }}>
+                                                    {curso.estado}
+                                                </span>
+                                            )}
+                                            {/* Badge mini juego sobre la imagen */}
+                                            {juego && juego.value !== "" && (
+                                                <span style={{ position: "absolute", top: 10, left: 10, display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(245,48,3,.9)", color: "#fff", fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 999, backdropFilter: "blur(4px)" }}>
+                                                    {juego.icon} {juego.tag}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Body */}
+                                        <div style={{ padding: "20px 20px 20px", flex: 1, display: "flex", flexDirection: "column" }}>
+                                            <h2 style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 600, lineHeight: 1.3, color: "#1b1b18" }}>{curso.titulo}</h2>
+                                            <p style={{ margin: "0 0 18px", fontSize: 13, color: "#706f6c", lineHeight: 1.6, flex: 1, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                                                {curso.descripcion}
+                                            </p>
+
+                                            {/* Chip del juego debajo de la descripción */}
+                                            {juego && juego.value !== "" && (
+                                                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 14, fontSize: 11, color: "#f53003", fontWeight: 600, background: "rgba(245,48,3,.06)", border: "1px solid rgba(245,48,3,.15)", borderRadius: 999, padding: "3px 10px", alignSelf: "flex-start" }}>
+                                                    {juego.icon} {juego.label}
+                                                </div>
+                                            )}
+
+                                            {/* Acciones */}
+                                            <div style={{ borderTop: "1px solid rgba(227,227,224,.6)", paddingTop: 14, display: "flex", gap: 7, alignItems: "center" }}>
+                                                <a href={`/curso/${curso.id}`} style={{ textDecoration: "none", flex: 1 }}>
+                                                    <button className="c-btn-red" style={{ ...btnRed, width: "100%", justifyContent: "center" }}>
+                                                        <Play size={12} /> Ver Curso
+                                                    </button>
+                                                </a>
+                                                <button className="c-btn-out" onClick={() => inscribirse(curso.id)} title="Inscribirse" style={{ ...btnOutline, width: 36, padding: 0, justifyContent: "center" }}>
+                                                    <UserPlus size={13} />
+                                                </button>
+                                                <button className="c-btn-out" onClick={() => { setModalEditar(curso); setEditTitulo(curso.titulo); setEditDescripcion(curso.descripcion); }} title="Editar" style={{ ...btnOutline, width: 36, padding: 0, justifyContent: "center" }}>
+                                                    <Edit2 size={13} />
+                                                </button>
+                                                <button className="c-del" onClick={() => eliminar(curso.id)} title="Eliminar" style={{ width: 36, height: 36, padding: 0, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 10, border: "1px solid rgba(245,48,3,.2)", background: "rgba(245,48,3,.05)", color: "#f53003", cursor: "pointer" }}>
+                                                    <Trash2 size={13} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </article>
+                                );
+                            })}
+                        </div>
+                    )}
+                </main>
+
+                {/* ══ FOOTER ══ */}
+                <footer style={{ borderTop: "1px solid rgba(227,227,224,.6)", padding: "20px 24px" }}>
+                    <div style={{ maxWidth: 1152, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#706f6c" }}>
+                            <div style={{ width: 20, height: 20, borderRadius: 6, background: "#f53003", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <GraduationCap size={11} color="#fff" />
+                            </div>
+                            EduPlatform © {new Date().getFullYear()}
+                        </div>
+                        <a href="/" style={{ textDecoration: "none" }}>
+                            <button className="c-btn-out" style={{ ...btnOutline, fontSize: 12 }}><Home size={12} /> Volver al inicio</button>
+                        </a>
+                    </div>
+                </footer>
+            </div>
+        </>
     );
 }
-
-// ─── Estilos ──────────────────────────────────────────────────────────────────
-const s: Record<string, React.CSSProperties> = {
-    page: {
-        fontFamily: "'DM Sans', sans-serif",
-        background: "#08090e",
-        minHeight: "100vh",
-        color: "#e2e0f5",
-    },
-
-    // Header
-    header: {
-        borderBottom: "1px solid #13141f",
-        background: "#08090e",
-    },
-    headerInner: {
-        display: "flex",
-        alignItems: "flex-start",
-        justifyContent: "space-between",
-        flexWrap: "wrap",
-        gap: "20px",
-        padding: "36px 40px 28px",
-    },
-    badge: {
-        fontFamily: "'Space Mono', monospace",
-        fontSize: "10px",
-        fontWeight: 700,
-        letterSpacing: "0.12em",
-        color: "#7c6fff",
-        background: "#1a1630",
-        border: "1px solid #3d35a0",
-        padding: "3px 10px",
-        borderRadius: "4px",
-        display: "inline-block",
-        marginBottom: "14px",
-    },
-    pageTitle: {
-        fontSize: "28px",
-        fontWeight: 600,
-        color: "#e8e6ff",
-        margin: "0 0 8px",
-        lineHeight: 1.25,
-    },
-    pageSubtitle: {
-        fontSize: "14px",
-        color: "#7a78a0",
-        margin: 0,
-    },
-    headerActions: {
-        display: "flex",
-        gap: "10px",
-        alignItems: "center",
-        flexShrink: 0,
-        paddingTop: "4px",
-    },
-    btnOutline: {
-        fontFamily: "'DM Sans', sans-serif",
-        fontSize: "13px",
-        fontWeight: 500,
-        padding: "9px 18px",
-        borderRadius: "8px",
-        border: "1px solid #2a2b3d",
-        background: "#111220",
-        color: "#8b8aaa",
-        cursor: "pointer",
-    },
-    btnPrimaryLg: {
-        fontFamily: "'DM Sans', sans-serif",
-        fontSize: "13px",
-        fontWeight: 500,
-        padding: "9px 18px",
-        borderRadius: "8px",
-        border: "1px solid #3d35a0",
-        background: "#1a1630",
-        color: "#9d8fff",
-        cursor: "pointer",
-    },
-
-    // Formulario
-    formPanel: {
-        margin: "0 40px 32px",
-        background: "#0d0e1a",
-        border: "1px solid #1e1f2e",
-        borderRadius: "14px",
-        padding: "24px 28px",
-    },
-    formGrid: {
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr 1fr",
-        gap: "20px",
-    },
-    formGroup: { display: "flex", flexDirection: "column", gap: "8px" },
-    formFooter: { marginTop: "20px", display: "flex", justifyContent: "flex-end" },
-    label: { fontSize: "12px", color: "#5a5880" },
-    inputDark: {
-        background: "#0a0b14",
-        border: "1px solid #2a2b3d",
-        borderRadius: "8px",
-        padding: "10px 14px",
-        color: "#d4d0ff",
-        fontSize: "13px",
-        fontFamily: "'DM Sans', sans-serif",
-        outline: "none",
-        width: "100%",
-    },
-    fileLabel: {
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        background: "#0a0b14",
-        border: "1px dashed #2a2b3d",
-        borderRadius: "8px",
-        padding: "10px 14px",
-        color: "#5a5880",
-        fontSize: "13px",
-        cursor: "pointer",
-    },
-
-    // Stats
-    statsBar: {
-        padding: "12px 40px",
-        borderBottom: "1px solid #0f1020",
-        display: "flex",
-        gap: "10px",
-    },
-    statChip: {
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "6px",
-        fontSize: "12px",
-        color: "#5a5880",
-        background: "#0f1020",
-        border: "1px solid #1e1f30",
-        padding: "4px 12px",
-        borderRadius: "20px",
-    },
-
-    // Main
-    main: { padding: "32px 40px 60px" },
-    grid: {
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-        gap: "20px",
-    },
-
-    // Card
-    card: {
-        background: "#0d0e17",
-        border: "1px solid #1e1f2e",
-        borderRadius: "14px",
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
-        transition: "border-color .2s",
-    },
-    cardImgWrap: {
-        position: "relative",
-        width: "100%",
-        height: "160px",
-        background: "#08090e",
-        flexShrink: 0,
-        overflow: "hidden",
-    },
-    cardImg: { width: "100%", height: "100%", objectFit: "cover" },
-    cardImgPlaceholder: {
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#0a0b14",
-    },
-    cardImgOverlay: {
-        position: "absolute",
-        inset: 0,
-        background: "linear-gradient(to top, #0d0e17 0%, transparent 60%)",
-    },
-    cardBadge: {
-        position: "absolute",
-        top: "10px",
-        right: "10px",
-        fontFamily: "'Space Mono', monospace",
-        fontSize: "9px",
-        fontWeight: 700,
-        letterSpacing: "0.1em",
-        color: "#4caf7d",
-        background: "#0a1f16",
-        border: "1px solid #1a3328",
-        padding: "3px 8px",
-        borderRadius: "4px",
-        textTransform: "uppercase",
-    },
-    cardBody: { padding: "18px 20px 20px", flex: 1, display: "flex", flexDirection: "column" },
-    cardTitle: {
-        fontSize: "15px",
-        fontWeight: 600,
-        color: "#d4d0ff",
-        margin: "0 0 8px",
-        lineHeight: 1.3,
-    },
-    cardDesc: {
-        fontSize: "13px",
-        color: "#5a5880",
-        margin: "0 0 18px",
-        lineHeight: 1.6,
-        flex: 1,
-        display: "-webkit-box",
-        WebkitLineClamp: 3,
-        WebkitBoxOrient: "vertical",
-        overflow: "hidden",
-    },
-    cardActions: { display: "flex", gap: "6px", alignItems: "center" },
-    actionBtn: {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "6px",
-        padding: "8px 12px",
-        borderRadius: "8px",
-        border: "none",
-        cursor: "pointer",
-        fontSize: "12px",
-        fontFamily: "'DM Sans', sans-serif",
-        fontWeight: 500,
-        flexShrink: 0,
-        transition: "background .15s",
-    },
-    actionBtnPrimary: {
-        background: "#1a1630",
-        color: "#9d8fff",
-        border: "1px solid #3d35a0",
-    },
-    actionBtnGreen: {
-        background: "#0a1f16",
-        color: "#4caf7d",
-        border: "1px solid #1a3328",
-        width: "34px",
-        padding: "8px 0",
-    },
-    actionBtnEdit: {
-        background: "#111220",
-        color: "#8b8aaa",
-        border: "1px solid #2a2b3d",
-        width: "34px",
-        padding: "8px 0",
-    },
-    actionBtnDelete: {
-        background: "#1a0f0f",
-        color: "#6b3030",
-        border: "1px solid #3a2a2a",
-        width: "34px",
-        padding: "8px 0",
-    },
-
-    // Empty state
-    emptyState: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "80px 0",
-        gap: "16px",
-    },
-    emptyText: { color: "#2e3050", fontSize: "14px" },
-
-    // Modal
-    overlay: {
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.7)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-    },
-    modal: {
-        background: "#0d0e1a",
-        border: "1px solid #2a2b3d",
-        borderRadius: "14px",
-        padding: "28px 32px",
-        width: "100%",
-        maxWidth: "460px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "12px",
-    },
-    modalTitle: {
-        fontSize: "17px",
-        fontWeight: 600,
-        color: "#d4d0ff",
-        marginBottom: "4px",
-    },
-    input: {
-        background: "#111220",
-        border: "1px solid #2a2b3d",
-        borderRadius: "8px",
-        padding: "10px 14px",
-        color: "#e2e0f5",
-        fontSize: "14px",
-        fontFamily: "'DM Sans', sans-serif",
-        outline: "none",
-        width: "100%",
-    },
-    modalBtns: { display: "flex", gap: "8px", justifyContent: "flex-end", marginTop: "4px" },
-    btnCancel: {
-        padding: "9px 18px",
-        background: "#111220",
-        color: "#6b6990",
-        border: "1px solid #2a2b3d",
-        borderRadius: "8px",
-        cursor: "pointer",
-        fontSize: "13px",
-        fontFamily: "'DM Sans', sans-serif",
-    },
-    btnPrimary: {
-        padding: "9px 18px",
-        background: "#1a1630",
-        color: "#9d8fff",
-        border: "1px solid #3d35a0",
-        borderRadius: "8px",
-        cursor: "pointer",
-        fontSize: "13px",
-        fontFamily: "'DM Sans', sans-serif",
-    },
-};
-
-const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
-  .btn-outline:hover { background: #1a1b2e !important; color: #d4d0ff !important; border-color: #3d3e5e !important; }
-  .btn-primary-lg:hover { background: #221c40 !important; color: #c4b8ff !important; }
-  .curso-card:hover { border-color: #2a2b4a !important; }
-  .action-btn-primary:hover { background: #221c40 !important; }
-  .action-btn-green:hover { background: #0f2e1e !important; color: #6fcf97 !important; }
-  .action-btn-edit:hover { background: #1a1b2e !important; color: #9d8fff !important; }
-  .action-btn-delete:hover { background: #2a1414 !important; color: #e05c5c !important; }
-  .file-label:hover { border-color: #3d35a0 !important; color: #7c6fff !important; }
-`;

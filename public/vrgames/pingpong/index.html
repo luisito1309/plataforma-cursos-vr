@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ping Pong VR</title>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #score {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: monospace;
+            font-size: 24px;
+            color: #fff;
+            text-shadow: 0 0 4px #000;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">Puntos: 0</div>
+    <a-scene embedded cursor="rayOrigin: mouse" raycaster="objects: .clickable">
+        <!-- Cámara con look-controls para mover la vista con el mouse -->
+        <a-entity camera position="0 1.6 4" look-controls="pointerLockEnabled: true; reverseMouseDrag: false">
+            <a-cursor visible="false"></a-cursor>
+        </a-entity>
+
+        <!-- Luz -->
+        <a-entity light="type: ambient; intensity: 0.6"></a-entity>
+        <a-entity light="type: directional; intensity: 0.8; position: 2 5 3" target="#mesa"></a-entity>
+
+        <!-- Mesa de ping pong -->
+        <a-entity id="mesa" position="0 0 0">
+            <!-- Superficie verde -->
+            <a-box position="0 0.4 0" width="2.74" height="0.05" depth="1.525" color="#1a472a" class="clickable" id="tablero"></a-box>
+            <!-- Patas -->
+            <a-box position="-1.2 -0.2 -0.6" width="0.08" height="0.4" depth="0.08" color="#2a2a2a"></a-box>
+            <a-box position="1.2 -0.2 -0.6" width="0.08" height="0.4" depth="0.08" color="#2a2a2a"></a-box>
+            <a-box position="-1.2 -0.2 0.6" width="0.08" height="0.4" depth="0.08" color="#2a2a2a"></a-box>
+            <a-box position="1.2 -0.2 0.6" width="0.08" height="0.4" depth="0.08" color="#2a2a2a"></a-box>
+            <!-- Línea central -->
+            <a-box position="0 0.425 0" width="0.03" height="0.02" depth="1.525" color="#fff"></a-box>
+        </a-entity>
+
+        <!-- Pelota -->
+        <a-sphere id="pelota" position="0 0.5 0" radius="0.04" color="#ff4444"></a-sphere>
+
+        <!-- Paleta (controlada con mouse en el plano X) -->
+        <a-entity id="paleta" position="0 0.45 -0.7" paddle-control>
+            <a-box width="0.3" height="0.05" depth="0.15" color="#333" class="clickable"></a-box>
+        </a-entity>
+
+        <!-- Suelo -->
+        <a-plane position="0 -0.5 0" rotation="-90 0 0" width="10" height="10" color="#1a1a2e"></a-plane>
+    </a-scene>
+
+    <script>
+        (function () {
+            var puntos = 0;
+            var ballSpeed = 0.12;
+            var ballVel = { x: 0.02, z: -ballSpeed };
+            var paddleWidth = 0.3;
+            var tableHalfX = 2.74 / 2;
+            var tableHalfZ = 1.525 / 2;
+
+            // Control de paleta con mouse
+            AFRAME.registerComponent('paddle-control', {
+                init: function () {
+                    var paddle = this.el;
+                    var self = this;
+                    this.mouseX = 0;
+                    document.addEventListener('mousemove', function (e) {
+                        self.mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+                    });
+                },
+                tick: function () {
+                    var pos = this.el.getAttribute('position');
+                    var x = this.mouseX * (tableHalfX - paddleWidth / 2 - 0.1);
+                    this.el.setAttribute('position', { x: x, y: pos.y, z: pos.z });
+                }
+            });
+
+            // Física simple de la pelota
+            AFRAME.registerComponent('ball-physics', {
+                init: function () {
+                    this.vel = { x: ballVel.x, z: ballVel.z };
+                    this.pelota = this.el;
+                },
+                tick: function () {
+                    var pos = this.pelota.getAttribute('position');
+                    pos.x += this.vel.x;
+                    pos.z += this.vel.z;
+
+                    // Rebote en paredes laterales (mesa)
+                    if (pos.x >= tableHalfX - 0.05) { pos.x = tableHalfX - 0.05; this.vel.x = -Math.abs(this.vel.x); }
+                    if (pos.x <= -tableHalfX + 0.05) { pos.x = -tableHalfX + 0.05; this.vel.x = Math.abs(this.vel.x); }
+
+                    // Rebote en pared trasera (lado del jugador = paleta)
+                    if (pos.z <= -tableHalfZ - 0.1) {
+                        pos.z = -tableHalfZ - 0.05;
+                        this.vel.z = Math.abs(this.vel.z);
+                        // Punto para el oponente (no sumamos aquí; podríamos restar)
+                    }
+
+                    // Rebote en pared delantera
+                    if (pos.z >= tableHalfZ - 0.05) {
+                        pos.z = tableHalfZ - 0.05;
+                        this.vel.z = -Math.abs(this.vel.z);
+                    }
+
+                    // Rebote con la paleta (z ≈ -0.7, x dentro del ancho de la paleta)
+                    var paletaEl = document.getElementById('paleta');
+                    var paletaPos = paletaEl.getAttribute('position');
+                    if (pos.z < -0.65 && pos.z > -0.75 && Math.abs(pos.x - paletaPos.x) < paddleWidth / 2 + 0.02) {
+                        pos.z = -0.65;
+                        this.vel.z = Math.abs(this.vel.z);
+                        puntos++;
+                        document.getElementById('score').textContent = 'Puntos: ' + puntos;
+                    }
+
+                    // Rebote en superficie de la mesa (y fija)
+                    if (pos.y < 0.45) pos.y = 0.45;
+                    if (pos.y > 0.5) pos.y = 0.5;
+
+                    this.pelota.setAttribute('position', pos);
+                }
+            });
+
+            // Añadir física a la pelota después de que A-Frame cargue
+            document.querySelector('a-scene').addEventListener('loaded', function () {
+                var pelota = document.getElementById('pelota');
+                pelota.setAttribute('ball-physics', '');
+            });
+        })();
+    </script>
+</body>
+</html>
