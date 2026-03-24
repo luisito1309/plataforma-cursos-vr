@@ -2,10 +2,11 @@ import React, { useEffect, useState, useRef } from "react";
 import { Link } from "@inertiajs/react";
 import axios from "axios";
 import VRPingPong from "@/components/VRPingPong";
+import QuizMedico3D from "@/components/QuizMedico3D";
 import {
     GraduationCap, Home, ArrowLeft, Play, ChevronDown,
     Plus, X, Edit2, Trash2, FileText, Video, Layers,
-    SkipBack, SkipForward, Monitor, Gamepad2,
+    SkipBack, SkipForward, Monitor, Gamepad2, Zap,
 } from "lucide-react";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
@@ -25,17 +26,17 @@ const MINI_JUEGOS_INFO: Record<string, { label: string; tag: string; icon: React
         icon: <Gamepad2 size={14} />,
         url: "https://codercat.xyz/monster-or-friend/",
     },
-    konterball: {
-        label: "Konterball",
-        tag: "WEBXR",
-        icon: <Monitor size={14} />,
-        url: "https://konterball.com/",
-    },
     pingpong: {
         label: "Ping Pong (3D)",
         tag: "3D",
         icon: <Monitor size={14} />,
         // sin url = usa componente <VRPingPong />
+    },
+    quiz_medico: {
+        label: "Quiz médico 3D",
+        tag: "QUIZ",
+        icon: <Zap size={14} />,
+        // sin url = usa componente <QuizMedico3D />
     },
     // ── Juegos futuros ────────────────────────────────────────────────────────
     // quiz_vr:    { label: "Quiz VR",          tag: "VR",  icon: <Gamepad2 size={14} />, url: "https://..." },
@@ -664,6 +665,10 @@ export default function VerCurso({ id }: { id: number }) {
                                         ) : juegoSeleccionado === "pingpong" ? (
                                             <div style={{ padding: 24 }}>
                                                 <VRPingPong />
+                                            </div>
+                                        ) : juegoSeleccionado === "quiz_medico" ? (
+                                            <div style={{ padding: 24, background: "#14151c" }}>
+                                                <QuizMedico3D />
                                             </div>
                                         ) : null}
                                     </div>

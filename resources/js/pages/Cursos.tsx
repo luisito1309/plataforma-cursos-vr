@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import QuizMedico3D from "@/components/QuizMedico3D";
 import {
     BookOpen, GraduationCap, Home, Plus, X,
     Upload, Edit2, Trash2, UserPlus, Play, Monitor,
@@ -13,7 +14,7 @@ const MINI_JUEGOS: MiniJuegoOption[] = [
     { value: "", label: "Sin mini juego", icon: <Gamepad2 size={14} />, tag: "—" },
     { value: "monster_friend", label: "Monster or Friend", icon: <Gamepad2 size={14} />, tag: "WEB" },
     { value: "pingpong", label: "Ping Pong (3D)", icon: <Monitor size={14} />, tag: "3D" },
-    { value: "konterball", label: "Konterball", icon: <Glasses size={14} />, tag: "WEBXR" },
+    { value: "quiz_medico", label: "Quiz médico 3D", icon: <Zap size={14} />, tag: "QUIZ" },
     // Futuros juegos — descomenta para activar:
     // { value: "vr_escape",   label: "Escape Room VR",     icon: <Glasses  size={14} />, tag: "VR"   },
     // { value: "sim_fisica",  label: "Simulación Física",  icon: <Cpu      size={14} />, tag: "SIM"  },
@@ -261,6 +262,33 @@ export default function Cursos() {
                                     )}
                                 </div>
                             </div>
+
+                            {miniJuego === "quiz_medico" && (
+                                <div
+                                    style={{
+                                        marginTop: 24,
+                                        padding: "24px",
+                                        background: "#fafaf8",
+                                        borderRadius: 16,
+                                        border: "1px solid #e3e3e0",
+                                    }}
+                                >
+                                    <p
+                                        style={{
+                                            ...labelSt,
+                                            marginBottom: 12,
+                                            color: "#1b1b18",
+                                            letterSpacing: ".04em",
+                                        }}
+                                    >
+                                        Vista previa — Quiz médico 3D
+                                    </p>
+                                    <div style={{ maxWidth: 720 }}>
+                                        <QuizMedico3D />
+                                    </div>
+                                </div>
+                            )}
+
                             <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
                                 <button className="c-btn-red" onClick={crearCurso} style={btnRed}><Plus size={14} /> Crear Curso</button>
                             </div>
