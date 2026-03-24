@@ -3,10 +3,11 @@ import { Link } from "@inertiajs/react";
 import axios from "axios";
 import VRPingPong from "@/components/VRPingPong";
 import QuizMedico3D from "@/components/QuizMedico3D";
+import AnatomiaHumana3D from "@/components/AnatomiaHumana3D";
 import {
     GraduationCap, Home, ArrowLeft, Play, ChevronDown,
     Plus, X, Edit2, Trash2, FileText, Video, Layers,
-    SkipBack, SkipForward, Monitor, Gamepad2, Zap,
+    SkipBack, SkipForward, Monitor, Gamepad2, Zap, Brain,
 } from "lucide-react";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
@@ -37,6 +38,12 @@ const MINI_JUEGOS_INFO: Record<string, { label: string; tag: string; icon: React
         tag: "QUIZ",
         icon: <Zap size={14} />,
         // sin url = usa componente <QuizMedico3D />
+    },
+    anatomia_humana_pro: {
+        label: "Anatomía Humana Interactiva 3D PRO",
+        tag: "3D",
+        icon: <Brain size={14} />,
+        // sin url = usa componente <AnatomiaHumana3D />
     },
     // ── Juegos futuros ────────────────────────────────────────────────────────
     // quiz_vr:    { label: "Quiz VR",          tag: "VR",  icon: <Gamepad2 size={14} />, url: "https://..." },
@@ -669,6 +676,10 @@ export default function VerCurso({ id }: { id: number }) {
                                         ) : juegoSeleccionado === "quiz_medico" ? (
                                             <div style={{ padding: 24, background: "#14151c" }}>
                                                 <QuizMedico3D />
+                                            </div>
+                                        ) : juegoSeleccionado === "anatomia_humana_pro" ? (
+                                            <div style={{ padding: 0, background: "#070a10" }}>
+                                                <AnatomiaHumana3D />
                                             </div>
                                         ) : null}
                                     </div>

@@ -46,154 +46,9 @@ export const PREGUNTAS_MEDICAS_EJEMPLO = [
         ],
         respuestaCorrecta: 1,
     },
-    {
-        texto: "Varón joven con dolor periumbilical que migra a FID, fiebre y leucocitosis. ¿Diagnóstico más probable?",
-        opciones: [
-            "Gastroenteritis viral",
-            "Apendicitis aguda",
-            "Colecistitis aguda",
-            "Ureterolitiasis derecha",
-        ],
-        respuestaCorrecta: 1,
-    },
-    {
-        texto: "Paciente con disnea de esfuerzo, ortopnea, edemas en miembros inferiores y estertores bibasales. ¿Síndrome clínico principal?",
-        opciones: [
-            "EPOC estable",
-            "Insuficiencia cardíaca congestiva",
-            "Embolia pulmonar masiva",
-            "Neumotórax a tensión",
-        ],
-        respuestaCorrecta: 1,
-    },
-    {
-        texto: "Mujer con fiebre, dolor hipogástrico, flujo vaginal purulento y signos de irritación peritoneal leve. ¿Primera sospecha?",
-        opciones: [
-            "Enfermedad inflamatoria pélvica",
-            "Apendicitis retrocecal",
-            "Cistitis simple",
-            "Endometriosis",
-        ],
-        respuestaCorrecta: 0,
-    },
-    {
-        texto: "Paciente con ictericia, dolor en hipocondrio derecho postprandial y leucocitosis. Ecografía: litiasis y pared vesicular gruesa. ¿Diagnóstico?",
-        opciones: [
-            "Hepatitis viral aguda",
-            "Colecistitis aguda litiásica",
-            "Pancreatitis aguda biliar",
-            "Colangitis ascendente",
-        ],
-        respuestaCorrecta: 1,
-    },
-    {
-        texto: "Fumador con tos crónica, disnea progresiva y enfisema en TAC. Exacerbación con aumento de purulencia del esputo. ¿Cuál es el cuadro de base?",
-        opciones: [
-            "Asma persistente grave",
-            "EPOC con exacerbación infecciosa",
-            "Fibrosis pulmonar idiopática",
-            "Bronquiectasias",
-        ],
-        respuestaCorrecta: 1,
-    },
-    {
-        texto: "Paciente con fatiga, intolerancia al frío, bradicardia y TSH elevada con T4 libre baja. ¿Diagnóstico?",
-        opciones: [
-            "Hipertiroidismo subclínico",
-            "Hipotiroidismo primario",
-            "Síndrome de Cushing",
-            "Insuficiencia suprarrenal aguda",
-        ],
-        respuestaCorrecta: 1,
-    },
-    {
-        texto: "Niño con fiebre, exantema maculopapular y signos de inmunización incompleta. Brote comunitario. ¿Qué agente es el más frecuente en sarampión?",
-        opciones: [
-            "Virus varicela-zóster",
-            "Virus del sarampión (paramixovirus)",
-            "Streptococcus pyogenes",
-            "Virus Epstein-Barr",
-        ],
-        respuestaCorrecta: 1,
-    },
-    {
-        texto: "Paciente con cefalea en trueno súbita, rigidez de nuca y sin focalidad neurológica. TC sin hemorragia. ¿Estudio indicado si se sospecha hemorragia subaracnoidea?",
-        opciones: [
-            "RM cerebral sin contraste únicamente",
-            "Punción lumbar si TC inicial negativa (según protocolo)",
-            "Electroencefalograma",
-            "Doppler de vasos intracraneales",
-        ],
-        respuestaCorrecta: 1,
-    },
-    {
-        texto: "Mujer joven con anemia microcítica, ferritina baja y RDW elevado. ¿Tipo de anemia más probable?",
-        opciones: [
-            "Anemia de enfermedad crónica",
-            "Anemia ferropénica",
-            "Anemia megaloblástica",
-            "Talasemia menor",
-        ],
-        respuestaCorrecta: 1,
-    },
-    {
-        texto: "Paciente con odinofagia, exudados amigdalares y fiebre sin tos. Test rápido positivo para Streptococcus pyogenes. ¿Tratamiento de elección?",
-        opciones: [
-            "Azitromicina oral empírica sin test",
-            "Amoxicilina (o penicilina benzatina según criterio)",
-            "Antiviral oseltamivir",
-            "Solo sintomático sin antibiótico",
-        ],
-        respuestaCorrecta: 1,
-    },
-    {
-        texto: "Paciente con diarrea agua acuosa tras comida en restaurante, sin sangre, sin fiebre alta. ¿Primera medida general?",
-        opciones: [
-            "Antibiótico de amplio espectro de inmediato",
-            "Reposición hídrica oral y vigilancia clínica",
-            "Ayuno absoluto prolongado",
-            "Corticoides sistémicos",
-        ],
-        respuestaCorrecta: 1,
-    },
-    {
-        texto: "Paciente con crisis hipertensiva (PA muy elevada) sin daño a órgano diana agudo. ¿Enfoque inicial más adecuado?",
-        opciones: [
-            "Nifedipino sublingual repetido en domicilio",
-            "Reducción gradual de PA en horas con antihipertensivos orales/EV según guía",
-            "Diurético de asa en bolo masivo inmediato",
-            "Reposo y no tratar hasta consulta ambulatoria en días",
-        ],
-        respuestaCorrecta: 1,
-    },
 ];
 
 const AVANCE_MS = 1600;
-
-/** Textura procedural: suelo tipo baldosa clínica */
-function crearTexturaSueloHospital() {
-    const canvas = document.createElement("canvas");
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext("2d");
-    const tile = 64;
-    for (let y = 0; y < 512; y += tile) {
-        for (let x = 0; x < 512; x += tile) {
-            const claro = ((x / tile + y / tile) % 2) === 0;
-            ctx.fillStyle = claro ? "#eef3f9" : "#e2eaf3";
-            ctx.fillRect(x, y, tile, tile);
-            ctx.strokeStyle = "rgba(160, 178, 200, 0.45)";
-            ctx.lineWidth = 1;
-            ctx.strokeRect(x + 0.5, y + 0.5, tile - 1, tile - 1);
-        }
-    }
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = THREE.RepeatWrapping;
-    tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(5, 5);
-    if ("colorSpace" in tex) tex.colorSpace = THREE.SRGBColorSpace;
-    return tex;
-}
 
 /**
  * @param {{ preguntas?: Array<{ texto: string; opciones: string[]; respuestaCorrecta: number }> }} props
@@ -217,201 +72,61 @@ export default function QuizMedico3D({ preguntas: preguntasProp }) {
         const mount = mountRef.current;
         if (!mount) return undefined;
 
-        const disposeList = [];
-
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xd8e4f0);
-        scene.fog = new THREE.Fog(0xd8e4f0, 5, 16);
+        scene.background = new THREE.Color(0x0f1118);
 
         const width = mount.clientWidth || 640;
         const height = mount.clientHeight || 320;
 
-        const camera = new THREE.PerspectiveCamera(48, width / height, 0.1, 100);
-        camera.position.set(0.35, 1.35, 4.1);
-        camera.lookAt(-0.15, 0.95, 0);
+        const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
+        camera.position.set(0, 1.1, 4.2);
+        camera.lookAt(0, 0.6, 0);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.setSize(width, height);
-        renderer.outputColorSpace = THREE.SRGBColorSpace;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.08;
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         mount.appendChild(renderer.domElement);
 
-        const hemi = new THREE.HemisphereLight(0xffffff, 0xb8c4d4, 0.65);
-        scene.add(hemi);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+        scene.add(ambientLight);
 
-        const sol = new THREE.DirectionalLight(0xfff5e6, 1.15);
-        sol.position.set(3, 6, 4);
-        sol.castShadow = true;
-        sol.shadow.mapSize.set(2048, 2048);
-        sol.shadow.camera.near = 0.5;
-        sol.shadow.camera.far = 20;
-        sol.shadow.camera.left = -5;
-        sol.shadow.camera.right = 5;
-        sol.shadow.camera.top = 5;
-        sol.shadow.camera.bottom = -5;
-        scene.add(sol);
+        const pointLight = new THREE.PointLight(0xffeecc, 1.2, 30);
+        pointLight.position.set(2.5, 3.5, 3);
+        scene.add(pointLight);
 
-        const rim = new THREE.PointLight(0xa8c8ff, 0.55, 25);
-        rim.position.set(-2.2, 2.2, 1.5);
-        scene.add(rim);
+        const fillLight = new THREE.PointLight(0x6688ff, 0.4, 20);
+        fillLight.position.set(-2, 1.5, 2);
+        scene.add(fillLight);
 
-        const texSuelo = crearTexturaSueloHospital();
-        disposeList.push(texSuelo);
-
-        const sueloGeo = new THREE.PlaneGeometry(14, 14);
+        const sueloGeo = new THREE.PlaneGeometry(8, 8);
         const sueloMat = new THREE.MeshStandardMaterial({
-            map: texSuelo,
-            roughness: 0.75,
-            metalness: 0.02,
-        });
-        disposeList.push(sueloGeo, sueloMat);
-        const suelo = new THREE.Mesh(sueloGeo, sueloMat);
-        suelo.rotation.x = -Math.PI / 2;
-        suelo.receiveShadow = true;
-        scene.add(suelo);
-
-        const paredGeo = new THREE.PlaneGeometry(14, 6);
-        const paredMat = new THREE.MeshStandardMaterial({
-            color: 0xeef4fa,
-            roughness: 0.92,
-            metalness: 0,
-        });
-        disposeList.push(paredGeo, paredMat);
-        const pared = new THREE.Mesh(paredGeo, paredMat);
-        pared.position.set(0, 3, -3.2);
-        pared.receiveShadow = true;
-        scene.add(pared);
-
-        const baseCamaGeo = new THREE.BoxGeometry(2.4, 0.12, 1.15);
-        const baseCamaMat = new THREE.MeshStandardMaterial({
-            color: 0x4a5568,
-            roughness: 0.55,
-            metalness: 0.35,
-        });
-        disposeList.push(baseCamaGeo, baseCamaMat);
-        const baseCama = new THREE.Mesh(baseCamaGeo, baseCamaMat);
-        baseCama.position.set(-1.35, 0.2, -0.4);
-        baseCama.castShadow = true;
-        baseCama.receiveShadow = true;
-        scene.add(baseCama);
-
-        const colchonGeo = new THREE.BoxGeometry(2.2, 0.22, 1.05);
-        const colchonMat = new THREE.MeshStandardMaterial({
-            color: 0xf5f8fc,
-            roughness: 0.88,
-            metalness: 0,
-        });
-        disposeList.push(colchonGeo, colchonMat);
-        const colchon = new THREE.Mesh(colchonGeo, colchonMat);
-        colchon.position.set(-1.35, 0.37, -0.4);
-        colchon.castShadow = true;
-        colchon.receiveShadow = true;
-        scene.add(colchon);
-
-        const almohadaGeo = new THREE.BoxGeometry(0.55, 0.12, 0.42);
-        const almohadaMat = new THREE.MeshStandardMaterial({
-            color: 0xe8eef6,
+            color: 0x1a1d28,
             roughness: 0.9,
-            metalness: 0,
-        });
-        disposeList.push(almohadaGeo, almohadaMat);
-        const almohada = new THREE.Mesh(almohadaGeo, almohadaMat);
-        almohada.position.set(-2.15, 0.52, -0.35);
-        almohada.rotation.y = 0.04;
-        almohada.castShadow = true;
-        scene.add(almohada);
-
-        const posteGeo = new THREE.CylinderGeometry(0.04, 0.05, 2.2, 12);
-        const posteMat = new THREE.MeshStandardMaterial({
-            color: 0xc0c8d4,
-            roughness: 0.35,
-            metalness: 0.65,
-        });
-        disposeList.push(posteGeo, posteMat);
-        const poste = new THREE.Mesh(posteGeo, posteMat);
-        poste.position.set(1.55, 1.15, -0.9);
-        poste.castShadow = true;
-        scene.add(poste);
-
-        const ganchoGeo = new THREE.TorusGeometry(0.12, 0.025, 8, 16, Math.PI);
-        const ganchoMat = new THREE.MeshStandardMaterial({
-            color: 0x9ca8b8,
-            roughness: 0.4,
-            metalness: 0.5,
-        });
-        disposeList.push(ganchoGeo, ganchoMat);
-        const gancho = new THREE.Mesh(ganchoGeo, ganchoMat);
-        gancho.position.set(1.55, 2.18, -0.9);
-        gancho.rotation.y = Math.PI / 2;
-        scene.add(gancho);
-
-        const matBata = new THREE.MeshStandardMaterial({
-            color: 0x7eb8e0,
-            roughness: 0.55,
-            metalness: 0.08,
-        });
-        const matPiel = new THREE.MeshStandardMaterial({
-            color: 0xe8b89a,
-            roughness: 0.62,
-            metalness: 0,
-        });
-        const matPantalón = new THREE.MeshStandardMaterial({
-            color: 0x3d4f63,
-            roughness: 0.78,
             metalness: 0.05,
         });
-        disposeList.push(matBata, matPiel, matPantalón);
+        const suelo = new THREE.Mesh(sueloGeo, sueloMat);
+        suelo.rotation.x = -Math.PI / 2;
+        suelo.position.y = -0.01;
+        scene.add(suelo);
 
-        const pacienteGrupo = new THREE.Group();
-        pacienteGrupo.position.set(-0.2, 0, 0.35);
+        const cuerpoGeo = new THREE.CapsuleGeometry(0.45, 1.15, 8, 16);
+        const cuerpoMat = new THREE.MeshStandardMaterial({
+            color: 0x6eb5ff,
+            roughness: 0.45,
+            metalness: 0.1,
+        });
+        const paciente = new THREE.Mesh(cuerpoGeo, cuerpoMat);
+        paciente.position.set(0, 0.85, 0);
+        scene.add(paciente);
 
-        const torsoGeo = new THREE.CapsuleGeometry(0.38, 0.72, 10, 20);
-        disposeList.push(torsoGeo);
-        const torso = new THREE.Mesh(torsoGeo, matBata);
-        torso.position.y = 1.12;
-        torso.castShadow = true;
-        pacienteGrupo.add(torso);
-
-        const cabezaGeo = new THREE.SphereGeometry(0.28, 28, 28);
-        disposeList.push(cabezaGeo);
-        const cabeza = new THREE.Mesh(cabezaGeo, matPiel);
-        cabeza.position.y = 1.72;
-        cabeza.castShadow = true;
-        pacienteGrupo.add(cabeza);
-
-        const brazoGeo = new THREE.CapsuleGeometry(0.09, 0.42, 6, 12);
-        disposeList.push(brazoGeo);
-        const brazoIzq = new THREE.Mesh(brazoGeo, matBata);
-        brazoIzq.position.set(-0.48, 1.28, 0.02);
-        brazoIzq.rotation.z = 0.35;
-        brazoIzq.rotation.x = 0.15;
-        brazoIzq.castShadow = true;
-        pacienteGrupo.add(brazoIzq);
-
-        const brazoDer = new THREE.Mesh(brazoGeo, matBata);
-        brazoDer.position.set(0.48, 1.28, 0.02);
-        brazoDer.rotation.z = -0.35;
-        brazoDer.rotation.x = 0.15;
-        brazoDer.castShadow = true;
-        pacienteGrupo.add(brazoDer);
-
-        const piernaGeo = new THREE.CapsuleGeometry(0.11, 0.48, 6, 12);
-        disposeList.push(piernaGeo);
-        const piernaIzq = new THREE.Mesh(piernaGeo, matPantalón);
-        piernaIzq.position.set(-0.18, 0.48, 0.02);
-        piernaIzq.castShadow = true;
-        pacienteGrupo.add(piernaIzq);
-
-        const piernaDer = new THREE.Mesh(piernaGeo, matPantalón);
-        piernaDer.position.set(0.18, 0.48, 0.02);
-        piernaDer.castShadow = true;
-        pacienteGrupo.add(piernaDer);
-
-        scene.add(pacienteGrupo);
+        const cabezaGeo = new THREE.SphereGeometry(0.32, 24, 24);
+        const cabezaMat = new THREE.MeshStandardMaterial({
+            color: 0xffcdb0,
+            roughness: 0.55,
+        });
+        const cabeza = new THREE.Mesh(cabezaGeo, cabezaMat);
+        cabeza.position.set(0, 1.75, 0);
+        scene.add(cabeza);
 
         let animationFrameId = 0;
         const clock = new THREE.Clock();
@@ -419,11 +134,8 @@ export default function QuizMedico3D({ preguntas: preguntasProp }) {
         const tick = () => {
             animationFrameId = requestAnimationFrame(tick);
             const t = clock.getElapsedTime();
-            const respiro = 1 + Math.sin(t * 2.2) * 0.018;
-            torso.scale.set(1, respiro, 1);
-            pacienteGrupo.rotation.y = Math.sin(t * 0.45) * 0.12 + t * 0.12;
-            cabeza.rotation.y = Math.sin(t * 0.5) * 0.08;
-            camera.position.x = 0.35 + Math.sin(t * 0.15) * 0.08;
+            paciente.rotation.y = Math.sin(t * 0.6) * 0.35 + t * 0.25;
+            cabeza.rotation.y = paciente.rotation.y * 0.8;
             renderer.render(scene, camera);
         };
         tick();
@@ -445,10 +157,13 @@ export default function QuizMedico3D({ preguntas: preguntasProp }) {
             resizeObserver.disconnect();
             window.removeEventListener("resize", onResize);
 
-            scene.clear();
-            disposeList.forEach((item) => {
-                if (item.dispose) item.dispose();
-            });
+            scene.remove(paciente, cabeza, suelo);
+            cuerpoGeo.dispose();
+            cuerpoMat.dispose();
+            cabezaGeo.dispose();
+            cabezaMat.dispose();
+            sueloGeo.dispose();
+            sueloMat.dispose();
 
             renderer.dispose();
             if (renderer.domElement.parentNode === mount) {
@@ -524,8 +239,8 @@ export default function QuizMedico3D({ preguntas: preguntasProp }) {
         <div className="flex w-full max-w-3xl flex-col gap-4">
             <div
                 ref={mountRef}
-                className="h-[min(44vh,400px)] w-full overflow-hidden rounded-xl border border-sky-200/20 bg-[#c5d6e6] shadow-lg ring-1 ring-sky-900/10"
-                style={{ minHeight: 300 }}
+                className="h-[min(40vh,360px)] w-full overflow-hidden rounded-xl border border-white/10 bg-[#0f1118] shadow-lg"
+                style={{ minHeight: 280 }}
             />
 
             {!juegoTerminado && preguntaActual && (

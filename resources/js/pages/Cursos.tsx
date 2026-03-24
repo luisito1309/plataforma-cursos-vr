@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import QuizMedico3D from "@/components/QuizMedico3D";
+import AnatomiaHumana3D from "@/components/AnatomiaHumana3D";
 import {
     BookOpen, GraduationCap, Home, Plus, X,
     Upload, Edit2, Trash2, UserPlus, Play, Monitor,
-    Gamepad2, Glasses, Cpu, Zap,
+    Gamepad2, Glasses, Cpu, Zap, Brain,
 } from "lucide-react";
 
 // ─── Catálogo de mini juegos (escalable) ─────────────────────────────────────
@@ -15,6 +16,12 @@ const MINI_JUEGOS: MiniJuegoOption[] = [
     { value: "monster_friend", label: "Monster or Friend", icon: <Gamepad2 size={14} />, tag: "WEB" },
     { value: "pingpong", label: "Ping Pong (3D)", icon: <Monitor size={14} />, tag: "3D" },
     { value: "quiz_medico", label: "Quiz médico 3D", icon: <Zap size={14} />, tag: "QUIZ" },
+    {
+        value: "anatomia_humana_pro",
+        label: "Anatomía Humana Interactiva 3D PRO",
+        icon: <Brain size={14} />,
+        tag: "3D",
+    },
     // Futuros juegos — descomenta para activar:
     // { value: "vr_escape",   label: "Escape Room VR",     icon: <Glasses  size={14} />, tag: "VR"   },
     // { value: "sim_fisica",  label: "Simulación Física",  icon: <Cpu      size={14} />, tag: "SIM"  },
@@ -286,6 +293,30 @@ export default function Cursos() {
                                     <div style={{ maxWidth: 720 }}>
                                         <QuizMedico3D />
                                     </div>
+                                </div>
+                            )}
+
+                            {miniJuego === "anatomia_humana_pro" && (
+                                <div
+                                    style={{
+                                        marginTop: 24,
+                                        padding: "24px",
+                                        background: "#0a0c12",
+                                        borderRadius: 16,
+                                        border: "1px solid #1e293b",
+                                    }}
+                                >
+                                    <p
+                                        style={{
+                                            ...labelSt,
+                                            marginBottom: 12,
+                                            color: "#e2e8f0",
+                                            letterSpacing: ".04em",
+                                        }}
+                                    >
+                                        Vista previa — Anatomía Humana Interactiva 3D PRO
+                                    </p>
+                                    <AnatomiaHumana3D />
                                 </div>
                             )}
 
