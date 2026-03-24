@@ -1,63 +1,134 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 /**
- * Preguntas de ejemplo. Sustituir por datos de API (Laravel) cuando corresponda.
- * Ejemplo de carga con axios:
- *
- * import axios from "axios";
- *
- * const [preguntas, setPreguntas] = useState(PREGUNTAS_MEDICAS_EJEMPLO);
- * useEffect(() => {
- *   axios
- *     .get("/api/quiz-medico")
- *     .then((res) => setPreguntas(res.data))
- *     .catch(() => {});
- * }, []);
+ * API futura (axios):
+ * const [lista, setLista] = useState(preguntas);
+ * useEffect(() => { axios.get("/api/quiz-medico").then((r) => setLista(r.data)); }, []);
  */
-export const PREGUNTAS_MEDICAS_EJEMPLO = [
+
+export const preguntas = [
     {
-        texto: "Paciente con fiebre, tos productiva y estertores crepitantes en base derecha. ¿Cuál es el diagnóstico más probable?",
-        opciones: [
-            "Neumonía adquirida en la comunidad",
-            "Asma bronquial",
-            "Embolia pulmonar",
-            "Neumotórax espontáneo",
-        ],
-        respuestaCorrecta: 0,
+        pregunta: "¿Cuál es la función principal del corazón?",
+        opciones: ["Filtrar la sangre", "Transportar oxígeno", "Bombear la sangre", "Producir hormonas"],
+        correcta: "Bombear la sangre",
     },
     {
-        texto: "Mujer con dolor torácico opresivo irradiado a brazo izquierdo y sudoración fría. ECG con elevación del ST. ¿Qué sospecha prioritaria?",
-        opciones: [
-            "Pericarditis aguda",
-            "Síndrome coronario agudo con elevación del ST",
-            "Costocondritis",
-            "Trastorno de ansiedad",
-        ],
-        respuestaCorrecta: 1,
+        pregunta: "¿Qué órgano se encarga de la respiración?",
+        opciones: ["Corazón", "Pulmones", "Riñones", "Estómago"],
+        correcta: "Pulmones",
     },
     {
-        texto: "Paciente con poliuria, polidipsia y glucosa en ayunas 320 mg/dL. ¿Hallazgo diagnóstico clave?",
-        opciones: [
-            "Hipotiroidismo",
-            "Diabetes mellitus tipo 2 descompensada",
-            "Insuficiencia renal crónica",
-            "Hiperparatiroidismo",
-        ],
-        respuestaCorrecta: 1,
+        pregunta: "¿Cuál es el órgano principal del sistema nervioso?",
+        opciones: ["Corazón", "Hígado", "Cerebro", "Pulmón"],
+        correcta: "Cerebro",
+    },
+    {
+        pregunta: "¿Qué sistema da soporte al cuerpo?",
+        opciones: ["Sistema digestivo", "Sistema nervioso", "Sistema esquelético", "Sistema circulatorio"],
+        correcta: "Sistema esquelético",
+    },
+    {
+        pregunta: "¿Dónde comienza la digestión?",
+        opciones: ["Estómago", "Intestino", "Boca", "Hígado"],
+        correcta: "Boca",
+    },
+    {
+        pregunta: "¿Qué transporta la sangre?",
+        opciones: ["Huesos", "Oxígeno y nutrientes", "Aire", "Hormonas únicamente"],
+        correcta: "Oxígeno y nutrientes",
+    },
+    {
+        pregunta: "¿Qué sistema defiende al cuerpo de enfermedades?",
+        opciones: ["Sistema muscular", "Sistema digestivo", "Sistema inmunológico", "Sistema urinario"],
+        correcta: "Sistema inmunológico",
+    },
+    {
+        pregunta: "¿Qué órgano filtra la sangre y produce orina?",
+        opciones: ["Pulmón", "Corazón", "Riñón", "Estómago"],
+        correcta: "Riñón",
+    },
+    {
+        pregunta: "¿Qué sistema permite el movimiento del cuerpo?",
+        opciones: ["Sistema respiratorio", "Sistema muscular", "Sistema nervioso", "Sistema endocrino"],
+        correcta: "Sistema muscular",
+    },
+    {
+        pregunta: "¿Qué sistema produce hormonas?",
+        opciones: ["Sistema digestivo", "Sistema endocrino", "Sistema circulatorio", "Sistema respiratorio"],
+        correcta: "Sistema endocrino",
     },
 ];
+
+/** Modelo 3D por índice de pregunta (0 = pregunta 1) */
+const MODELOS_POR_PREGUNTA = [
+    "/models/nervioso.glb",
+    "/models/respiratorio.glb",
+    "/models/cerebro.glb",
+    "/models/esqueleto.glb",
+    "/models/digestivos.glb",
+    "/models/nervioso.glb",
+    "/models/piel.glb",
+    "/models/riñones.glb",
+    "/models/piel.glb",
+    "/models/organos.glb",
+];
+
+function modeloPorIndicePregunta(i) {
+    return MODELOS_POR_PREGUNTA[i] ?? MODELOS_POR_PREGUNTA[0];
+}
+
+function disposeModel(root) {
+    if (!root) return;
+    root.traverse((child) => {
+        if (child.isMesh) {
+            child.geometry?.dispose?.();
+            const mats = child.material;
+            if (Array.isArray(mats)) {
+                mats.forEach((m) => {
+                    m?.map?.dispose?.();
+                    m?.dispose?.();
+                });
+            } else if (mats) {
+                mats.map?.dispose?.();
+                mats.dispose?.();
+            }
+        }
+    });
+}
+
+function fitAndCenterObject(object, targetSize = 2.2) {
+    object.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(object);
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z, 0.0001);
+    const s = targetSize / maxDim;
+    object.scale.setScalar(s);
+    object.updateMatrixWorld(true);
+    const box2 = new THREE.Box3().setFromObject(object);
+    const c = box2.getCenter(new THREE.Vector3());
+    object.position.sub(c);
+}
 
 const AVANCE_MS = 1600;
 
 /**
- * @param {{ preguntas?: Array<{ texto: string; opciones: string[]; respuestaCorrecta: number }> }} props
+ * @param {{ preguntas?: Array<{ pregunta: string; opciones: string[]; correcta: string }> }} props
  */
 export default function QuizMedico3D({ preguntas: preguntasProp }) {
-    const preguntas = preguntasProp ?? PREGUNTAS_MEDICAS_EJEMPLO;
+    const lista = preguntasProp ?? preguntas;
 
     const mountRef = useRef(null);
     const advanceTimerRef = useRef(null);
+    const sceneRef = useRef(null);
+    const rendererRef = useRef(null);
+    const cameraRef = useRef(null);
+    const controlsRef = useRef(null);
+    const modeloRootRef = useRef(null);
+    const loadGenRef = useRef(0);
+    const loaderRef = useRef(new GLTFLoader());
 
     const [indicePregunta, setIndicePregunta] = useState(0);
     const [puntaje, setPuntaje] = useState(0);
@@ -65,8 +136,8 @@ export default function QuizMedico3D({ preguntas: preguntasProp }) {
     const [juegoTerminado, setJuegoTerminado] = useState(false);
     const [esperandoAvance, setEsperandoAvance] = useState(false);
 
-    const totalPreguntas = preguntas.length;
-    const preguntaActual = totalPreguntas > 0 ? preguntas[indicePregunta] : null;
+    const totalPreguntas = lista.length;
+    const preguntaActual = totalPreguntas > 0 ? lista[indicePregunta] : null;
 
     useEffect(() => {
         const mount = mountRef.current;
@@ -74,18 +145,30 @@ export default function QuizMedico3D({ preguntas: preguntasProp }) {
 
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0f1118);
+        sceneRef.current = scene;
 
         const width = mount.clientWidth || 640;
         const height = mount.clientHeight || 320;
 
         const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
-        camera.position.set(0, 1.1, 4.2);
-        camera.lookAt(0, 0.6, 0);
+        camera.position.set(0, 0.85, 4.2);
+        camera.lookAt(0, 0, 0);
+        cameraRef.current = camera;
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.setSize(width, height);
         mount.appendChild(renderer.domElement);
+        rendererRef.current = renderer;
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.07;
+        controls.target.set(0, 0, 0);
+        controls.minDistance = 1.4;
+        controls.maxDistance = 14;
+        controls.maxPolarAngle = Math.PI * 0.95;
+        controlsRef.current = controls;
 
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
         scene.add(ambientLight);
@@ -109,33 +192,11 @@ export default function QuizMedico3D({ preguntas: preguntasProp }) {
         suelo.position.y = -0.01;
         scene.add(suelo);
 
-        const cuerpoGeo = new THREE.CapsuleGeometry(0.45, 1.15, 8, 16);
-        const cuerpoMat = new THREE.MeshStandardMaterial({
-            color: 0x6eb5ff,
-            roughness: 0.45,
-            metalness: 0.1,
-        });
-        const paciente = new THREE.Mesh(cuerpoGeo, cuerpoMat);
-        paciente.position.set(0, 0.85, 0);
-        scene.add(paciente);
-
-        const cabezaGeo = new THREE.SphereGeometry(0.32, 24, 24);
-        const cabezaMat = new THREE.MeshStandardMaterial({
-            color: 0xffcdb0,
-            roughness: 0.55,
-        });
-        const cabeza = new THREE.Mesh(cabezaGeo, cabezaMat);
-        cabeza.position.set(0, 1.75, 0);
-        scene.add(cabeza);
-
         let animationFrameId = 0;
-        const clock = new THREE.Clock();
 
         const tick = () => {
             animationFrameId = requestAnimationFrame(tick);
-            const t = clock.getElapsedTime();
-            paciente.rotation.y = Math.sin(t * 0.6) * 0.35 + t * 0.25;
-            cabeza.rotation.y = paciente.rotation.y * 0.8;
+            controls.update();
             renderer.render(scene, camera);
         };
         tick();
@@ -153,15 +214,22 @@ export default function QuizMedico3D({ preguntas: preguntasProp }) {
         resizeObserver.observe(mount);
 
         return () => {
+            loadGenRef.current += 1;
             cancelAnimationFrame(animationFrameId);
             resizeObserver.disconnect();
             window.removeEventListener("resize", onResize);
 
-            scene.remove(paciente, cabeza, suelo);
-            cuerpoGeo.dispose();
-            cuerpoMat.dispose();
-            cabezaGeo.dispose();
-            cabezaMat.dispose();
+            controls.dispose();
+            controlsRef.current = null;
+
+            const m = modeloRootRef.current;
+            if (m) {
+                scene.remove(m);
+                disposeModel(m);
+                modeloRootRef.current = null;
+            }
+
+            scene.remove(suelo);
             sueloGeo.dispose();
             sueloMat.dispose();
 
@@ -169,8 +237,54 @@ export default function QuizMedico3D({ preguntas: preguntasProp }) {
             if (renderer.domElement.parentNode === mount) {
                 mount.removeChild(renderer.domElement);
             }
+            sceneRef.current = null;
+            cameraRef.current = null;
+            rendererRef.current = null;
         };
     }, []);
+
+    useEffect(() => {
+        const scene = sceneRef.current;
+        if (!scene || juegoTerminado) return undefined;
+
+        loadGenRef.current += 1;
+        const gen = loadGenRef.current;
+
+        const anterior = modeloRootRef.current;
+        if (anterior) {
+            scene.remove(anterior);
+            disposeModel(anterior);
+            modeloRootRef.current = null;
+        }
+
+        const ruta = modeloPorIndicePregunta(indicePregunta);
+
+        loaderRef.current.load(
+            ruta,
+            (gltf) => {
+                if (gen !== loadGenRef.current) {
+                    disposeModel(gltf.scene);
+                    return;
+                }
+                const root = gltf.scene;
+                root.name = "quiz_modelo_medico";
+                fitAndCenterObject(root, 2.2);
+                scene.add(root);
+                modeloRootRef.current = root;
+
+                const cam = cameraRef.current;
+                const ctl = controlsRef.current;
+                if (cam && ctl) {
+                    cam.position.set(0, 0.85, 4.2);
+                    ctl.target.set(0, 0, 0);
+                    ctl.update();
+                }
+            },
+            undefined,
+            () => {},
+        );
+
+    }, [indicePregunta, juegoTerminado]);
 
     useEffect(() => {
         return () => {
@@ -206,7 +320,8 @@ export default function QuizMedico3D({ preguntas: preguntasProp }) {
     const manejarOpcion = (indiceOpcion) => {
         if (juegoTerminado || !preguntaActual || esperandoAvance) return;
 
-        const esCorrecto = indiceOpcion === preguntaActual.respuestaCorrecta;
+        const elegida = preguntaActual.opciones[indiceOpcion];
+        const esCorrecto = elegida === preguntaActual.correcta;
         setFeedback(esCorrecto ? "correcto" : "incorrecto");
         if (esCorrecto) {
             setPuntaje((p) => p + 1);
@@ -236,12 +351,17 @@ export default function QuizMedico3D({ preguntas: preguntasProp }) {
     }
 
     return (
-        <div className="flex w-full max-w-3xl flex-col gap-4">
-            <div
-                ref={mountRef}
-                className="h-[min(40vh,360px)] w-full overflow-hidden rounded-xl border border-white/10 bg-[#0f1118] shadow-lg"
-                style={{ minHeight: 280 }}
-            />
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+            <div className="w-full">
+                <div
+                    ref={mountRef}
+                    className="mx-auto h-[min(40vh,360px)] w-full max-w-2xl overflow-hidden rounded-xl border border-white/10 bg-[#0f1118] shadow-lg"
+                    style={{ minHeight: 280 }}
+                />
+                <p className="mt-2 text-center text-xs text-muted-foreground">
+                    Arrastra con el ratón para girar · rueda para acercar o alejar
+                </p>
+            </div>
 
             {!juegoTerminado && preguntaActual && (
                 <div className="flex flex-col gap-3">
@@ -249,7 +369,7 @@ export default function QuizMedico3D({ preguntas: preguntasProp }) {
                         Pregunta {indicePregunta + 1} de {totalPreguntas}
                     </p>
                     <h2 className="text-lg font-semibold leading-snug text-foreground">
-                        {preguntaActual.texto}
+                        {preguntaActual.pregunta}
                     </h2>
 
                     <div className="grid gap-2 sm:grid-cols-2">
