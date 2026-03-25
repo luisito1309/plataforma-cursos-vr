@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Link } from "@inertiajs/react";
 import axios from "axios";
 import EduPageShell, { EduHeroBlobs, eduNavOutline } from "@/components/EduPageShell";
+import { isMinijuegoOk, miniJuegoTieneProgresoLocal } from "@/lib/minijuegoStorage";
 import VRPingPong from "@/components/VRPingPong";
 import QuizMedico3D from "@/components/QuizMedico3D";
 import AnatomiaHumana3D from "@/components/AnatomiaHumana3D";
@@ -121,6 +122,8 @@ export default function VerCurso({ id }: { id: number }) {
 
     // Estado para controlar qué juego está seleccionado en la sección de mini juegos
     const [juegoSeleccionado, setJuegoSeleccionado] = useState<string | null>(null);
+    /** Mini juegos con progreso local (Computer 3D, Anatomía): sustituye "pendiente" en chip al completar. */
+    const [miniJuegoLocalListo, setMiniJuegoLocalListo] = useState(false);
 
     const [modalVideo, setModalVideo] = useState<{ modulo_id: number } | null>(null);
     const [formVideo, setFormVideo] = useState({ titulo: "", url: "" });
@@ -131,6 +134,24 @@ export default function VerCurso({ id }: { id: number }) {
 
     useEffect(() => { cargarCurso(); }, []);
     useEffect(() => { if (videoRef.current) videoRef.current.load(); }, [videoActivo?.url]);
+
+    useEffect(() => {
+        if (!curso?.mini_juego || !miniJuegoTieneProgresoLocal(curso.mini_juego)) {
+            setMiniJuegoLocalListo(false);
+            return;
+        }
+        setMiniJuegoLocalListo(isMinijuegoOk(curso.id, curso.mini_juego));
+    }, [curso?.id, curso?.mini_juego]);
+
+    useEffect(() => {
+        const fn = (e: Event) => {
+            const ev = e as CustomEvent<{ cursoId: number; juego: string }>;
+            if (!curso?.id || !curso.mini_juego) return;
+            if (ev.detail?.cursoId === curso.id && ev.detail?.juego === curso.mini_juego) setMiniJuegoLocalListo(true);
+        };
+        window.addEventListener("edu-minijuego-ok", fn);
+        return () => window.removeEventListener("edu-minijuego-ok", fn);
+    }, [curso?.id, curso?.mini_juego]);
 
     const cargarCurso = () => {
         setLoading(true);
@@ -372,7 +393,16 @@ export default function VerCurso({ id }: { id: number }) {
                             {[
                                 { icon: <Layers size={11} />, label: `${modulos.length} módulos` },
                                 { icon: <Video size={11} />, label: `${todosLosVideos.length} videos` },
-                                { icon: null, label: curso.estado, green: true },
+                                {
+                                    icon: null,
+                                    label:
+                                        miniJuegoLocalListo &&
+                                        curso.mini_juego &&
+                                        miniJuegoTieneProgresoLocal(curso.mini_juego)
+                                            ? "Completado"
+                                            : curso.estado,
+                                    green: true,
+                                },
                             ].map((chip, i) => (
                                 <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: chip.green ? "#166534" : "#706f6c", background: chip.green ? "#f0fdf4" : "#f5f5f3", border: `1px solid ${chip.green ? "#bbf7d0" : "#e3e3e0"}`, padding: "4px 12px", borderRadius: 999 }}>
                                     {chip.icon}{chip.label}
@@ -706,11 +736,17 @@ export default function VerCurso({ id }: { id: number }) {
                                             </div>
                                         ) : juegoSeleccionado === "anatomia_humana" ? (
                                             <div style={{ padding: 24, background: "#14151c" }}>
-                                                <AnatomiaHumana3D />
+                                                <AnatomiaHumana3D
+                                                    cursoId={id}
+                                                    onCompletado={() => setMiniJuegoLocalListo(true)}
+                                                />
                                             </div>
                                         ) : juegoSeleccionado === "computer_3d" ? (
                                             <div style={{ padding: 24, background: "#14151c" }}>
-                                                <Computer3D />
+                                                <Computer3D
+                                                    cursoId={id}
+                                                    onCompletado={() => setMiniJuegoLocalListo(true)}
+                                                />
                                             </div>
                                         ) : null}
                                     </div>

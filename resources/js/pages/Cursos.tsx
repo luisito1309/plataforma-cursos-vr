@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "@inertiajs/react";
 import axios from "axios";
 import EduPageShell, { EduHeroBlobs, eduNavOutline, eduNavPrimary } from "@/components/EduPageShell";
+import { isMinijuegoOk, miniJuegoTieneProgresoLocal } from "@/lib/minijuegoStorage";
 import QuizMedico3D from "@/components/QuizMedico3D";
 import AnatomiaHumana3D from "@/components/AnatomiaHumana3D";
 import Computer3D from "@/components/Computer3D";
@@ -93,7 +94,15 @@ const labelSt: React.CSSProperties = {
 };
 
 // ─── Componente ──────────────────────────────────────────────────────────────
+function etiquetaEstadoCurso(curso: Curso): string {
+    if (curso.mini_juego && miniJuegoTieneProgresoLocal(curso.mini_juego) && isMinijuegoOk(curso.id, curso.mini_juego)) {
+        return "Completado";
+    }
+    return curso.estado?.trim() ?? "";
+}
+
 export default function Cursos() {
+    const [, bumpMiniJuegoUi] = useState(0);
     const [cursos, setCursos] = useState<Curso[]>([]);
     const [titulo, setTitulo] = useState("");
     const [descripcion, setDescripcion] = useState("");
@@ -106,6 +115,12 @@ export default function Cursos() {
     const [editDescripcion, setEditDescripcion] = useState("");
 
     useEffect(() => { cargar(); }, []);
+
+    useEffect(() => {
+        const h = () => bumpMiniJuegoUi((n) => n + 1);
+        window.addEventListener("edu-minijuego-ok", h);
+        return () => window.removeEventListener("edu-minijuego-ok", h);
+    }, []);
 
     useEffect(() => {
         const opciones = miniJuegosPorCategoria(categoria);
@@ -502,6 +517,7 @@ export default function Cursos() {
                             {cursos.map((curso, i) => {
                                 const juego = curso.mini_juego ? getJuego(curso.mini_juego) : null;
                                 const catLabel = etiquetaCategoria(curso.categoria);
+                                const estadoMostrar = etiquetaEstadoCurso(curso);
                                 return (
                                     <article
                                         key={`${curso.id}-${curso.titulo}`}
@@ -518,9 +534,9 @@ export default function Cursos() {
                                             <span style={{ position: "absolute", right: 12, bottom: 4, fontSize: 52, fontWeight: 900, fontFamily: "'Playfair Display', serif", color: "rgba(245,48,3,.07)", lineHeight: 1, userSelect: "none" }}>
                                                 {String(i + 1).padStart(2, "0")}
                                             </span>
-                                            {curso.estado && (
+                                            {estadoMostrar && (
                                                 <span style={{ position: "absolute", top: 10, right: 10, background: "rgba(10,31,22,.9)", color: "#4caf7d", fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 999, backdropFilter: "blur(4px)" }}>
-                                                    {curso.estado}
+                                                    {estadoMostrar}
                                                 </span>
                                             )}
                                             {/* Badge mini juego sobre la imagen */}

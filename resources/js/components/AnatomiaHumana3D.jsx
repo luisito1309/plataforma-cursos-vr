@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { CheckCircle2 } from "lucide-react";
+import { isMinijuegoOk, setMinijuegoOk } from "@/lib/minijuegoStorage";
 
 const modelos = {
     piel: "/models/piel.glb",
@@ -383,7 +385,13 @@ function fitAndCenterObject(object, targetSize = 2.2) {
     object.position.sub(c);
 }
 
-export default function AnatomiaHumana3D() {
+/**
+ * @param {object} props
+ * @param {number} [props.cursoId]
+ * @param {() => void} [props.onCompletado]
+ * @param {string} [props.storageKey]
+ */
+export default function AnatomiaHumana3D({ cursoId, onCompletado, storageKey = "anatomia_humana" }) {
     const mountRef = useRef(null);
 
     const sceneRef = useRef(null);
@@ -406,6 +414,35 @@ export default function AnatomiaHumana3D() {
     const [sistema, setSistema] = useState("piel");
     const [organoNombre, setOrganoNombre] = useState("");
     const [cargando, setCargando] = useState(false);
+    const [completado, setCompletado] = useState(false);
+    const [jugado, setJugado] = useState(false);
+    const skipSistemaRef = useRef(true);
+
+    const persistOk = typeof cursoId === "number" && cursoId > 0;
+
+    useEffect(() => {
+        if (!persistOk) return;
+        if (isMinijuegoOk(cursoId, storageKey)) setCompletado(true);
+    }, [cursoId, storageKey, persistOk]);
+
+    useEffect(() => {
+        if (skipSistemaRef.current) {
+            skipSistemaRef.current = false;
+            return;
+        }
+        setJugado(true);
+    }, [sistema]);
+
+    useEffect(() => {
+        if (organoNombre) setJugado(true);
+    }, [organoNombre]);
+
+    const finalizarMinijuego = () => {
+        if (!jugado || completado) return;
+        if (persistOk) setMinijuegoOk(cursoId, storageKey);
+        setCompletado(true);
+        onCompletado?.();
+    };
 
     const cargarModelo = useCallback((ruta) => {
         const scene = sceneRef.current;
@@ -702,6 +739,48 @@ export default function AnatomiaHumana3D() {
 
     return (
         <div className="flex w-full max-w-6xl flex-col gap-3">
+            {completado && (
+                <div
+                    className="flex items-start gap-3 rounded-xl border border-emerald-500/35 bg-emerald-500/[0.08] px-4 py-3 text-sm dark:border-emerald-400/30 dark:bg-emerald-500/15"
+                    role="status"
+                    aria-label="Mini juego completado"
+                >
+                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="h-5 w-5" aria-hidden />
+                    </span>
+                    <div className="min-w-0">
+                        <p className="font-semibold text-foreground">Mini juego completado</p>
+                        <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                            Actividad finalizada. Puedes seguir recorriendo los sistemas y las anotaciones.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {!completado && (
+                <div className="rounded-xl border border-amber-500/35 bg-amber-500/[0.07] px-4 py-3 text-sm dark:border-amber-400/25 dark:bg-amber-500/10">
+                    <p className="font-semibold text-foreground">Mini juego pendiente</p>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                        Explora otro sistema del cuerpo o haz clic en el modelo. Cuando termines, pulsa{" "}
+                        <strong className="text-foreground">Finalizar mini juego</strong>.
+                    </p>
+                    {jugado ? (
+                        <button
+                            type="button"
+                            onClick={finalizarMinijuego}
+                            className="mt-3 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                        >
+                            Finalizar mini juego
+                        </button>
+                    ) : (
+                        <p className="mt-2 text-xs italic text-muted-foreground">
+                            Cambia de sistema con los botones o selecciona una parte en el modelo 3D para registrar que
+                            jugaste.
+                        </p>
+                    )}
+                </div>
+            )}
+
             <div className="flex flex-wrap gap-2">
                 {SISTEMAS.map((s) => (
                     <button
