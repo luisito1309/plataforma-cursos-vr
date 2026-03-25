@@ -26,6 +26,12 @@ class CursoController extends Controller
     $miniJuego = $request->input('mini_juego');
     $miniJuego = ($miniJuego !== null && $miniJuego !== '') ? $miniJuego : null;
 
+    $categoria = $request->input('categoria');
+    $allowedCat = ['play', 'medicina', 'tecnologia'];
+    if (! is_string($categoria) || ! in_array($categoria, $allowedCat, true)) {
+        $categoria = 'tecnologia';
+    }
+
     $curso = Curso::create([
         'titulo' => $request->titulo,
         'descripcion' => $request->descripcion,
@@ -33,6 +39,7 @@ class CursoController extends Controller
         'estado' => 'pendiente',
         'imagen' => $imagenPath,
         'mini_juego' => $miniJuego,
+        'categoria' => $categoria,
     ]);
 
     return response()->json($curso);

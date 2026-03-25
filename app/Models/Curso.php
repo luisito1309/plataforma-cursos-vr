@@ -17,6 +17,7 @@ class Curso extends Model
         'estado',
         'imagen',
         'mini_juego',
+        'categoria',
     ];
 
     public function modulos()

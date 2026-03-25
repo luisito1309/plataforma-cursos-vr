@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import {
-    BookOpen, GraduationCap, Home, ArrowLeft,
-    Play, BookMarked, ChevronRight,
-} from "lucide-react";
+import React, { useEffect, useState } from 'react';
+import { Link } from '@inertiajs/react';
+import axios from 'axios';
+import { BookOpen, BookMarked, Home, ArrowLeft, Play, ChevronRight } from 'lucide-react';
+import EduPageShell, { EduHeroBlobs, eduNavOutline, eduNavPrimary } from '@/components/EduPageShell';
 
 interface Curso {
     id: number;
@@ -13,219 +12,168 @@ interface Curso {
     estado?: string;
 }
 
-// ─── Tokens ──────────────────────────────────────────────────────────────────
-const btnRed: React.CSSProperties = {
-    background: "#f53003", color: "#fff", border: "none",
-    borderRadius: "10px", padding: "0 18px", height: "36px",
-    fontSize: "13px", fontFamily: "'Instrument Sans', sans-serif",
-    fontWeight: 600, cursor: "pointer", display: "inline-flex",
-    alignItems: "center", gap: "7px",
-};
-
-const btnOutline: React.CSSProperties = {
-    background: "#fff", color: "#706f6c",
-    border: "1px solid #d1d0cc", borderRadius: "10px",
-    padding: "0 16px", height: "36px", fontSize: "13px",
-    fontFamily: "'Instrument Sans', sans-serif",
-    fontWeight: 500, cursor: "pointer", display: "inline-flex",
-    alignItems: "center", gap: "7px",
-};
-
 export default function MisCursos() {
     const [cursos, setCursos] = useState<Curso[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => { cargar(); }, []);
+    useEffect(() => {
+        cargar();
+    }, []);
 
     const cargar = () =>
-        axios.get("/api/mis-cursos")
-            .then(r => setCursos(r.data))
-            .catch(e => console.error("Error cargando mis cursos:", e))
+        axios
+            .get('/api/mis-cursos')
+            .then((r) => setCursos(r.data))
+            .catch((e) => console.error('Error cargando mis cursos:', e))
             .finally(() => setLoading(false));
 
-    // ── Loading ──────────────────────────────────────────────────────────────
     if (loading) {
         return (
-            <>
-                <style>{fonts}</style>
-                <div style={{ fontFamily: "'Instrument Sans', sans-serif", background: "#FDFDFC", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: "50%", border: "2.5px solid #e3e3e0", borderTopColor: "#f53003", animation: "spin .8s linear infinite" }} />
-                    <p style={{ color: "#706f6c", fontSize: 14, margin: 0 }}>Cargando tus cursos...</p>
-                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <EduPageShell
+                title="Mis cursos"
+                navRight={
+                    <Link href="/" className={eduNavOutline}>
+                        <Home className="h-3.5 w-3.5" /> Home
+                    </Link>
+                }
+            >
+                <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-6">
+                    <div
+                        className="h-10 w-10 animate-spin rounded-full border-2 border-[#e3e3e0] border-t-[#f53003] dark:border-[#2a2a26]"
+                        aria-hidden
+                    />
+                    <p className="text-sm text-[#706f6c] dark:text-[#A1A09A]">Cargando tus cursos…</p>
                 </div>
-            </>
+            </EduPageShell>
         );
     }
 
     return (
-        <>
-            <style>{fonts + hoverCss}</style>
-
-            <div style={{ fontFamily: "'Instrument Sans', sans-serif", background: "#FDFDFC", minHeight: "100vh", color: "#1b1b18" }}>
-
-                {/* ══ NAV ══ */}
-                <header style={{ position: "sticky", top: 0, zIndex: 50, borderBottom: "1px solid rgba(227,227,224,.7)", background: "rgba(253,253,252,.92)", backdropFilter: "blur(8px)" }}>
-                    <div style={{ maxWidth: 1152, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60 }}>
-                        {/* Logo */}
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={{ width: 32, height: 32, borderRadius: 10, background: "#f53003", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <GraduationCap size={16} color="#fff" />
-                            </div>
-                            <span style={{ fontSize: 15, fontWeight: 600 }}>EduPlatform</span>
+        <EduPageShell
+            title="Mis cursos — EduPlatform"
+            navRight={
+                <>
+                    <Link href="/" className={eduNavOutline}>
+                        <Home className="h-3.5 w-3.5" /> Home
+                    </Link>
+                    <Link href="/cursos" className={eduNavOutline}>
+                        <ArrowLeft className="h-3.5 w-3.5" /> Explorar cursos
+                    </Link>
+                </>
+            }
+        >
+            {/* Hero */}
+            <section className="relative overflow-hidden border-b border-[#e3e3e0]/60 dark:border-[#2a2a26]/60">
+                <EduHeroBlobs />
+                <div className="relative mx-auto flex max-w-6xl flex-wrap items-end justify-between gap-6 px-6 pb-10 pt-14 lg:pt-16">
+                    <div className="max-w-xl">
+                        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#f53003]/25 bg-[#f53003]/6 px-4 py-1.5 text-sm font-medium text-[#f53003]">
+                            <BookMarked className="h-3.5 w-3.5" /> Mi aprendizaje
                         </div>
-
-                        {/* Acciones nav */}
-                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                            <a href="/" style={{ textDecoration: "none" }}>
-                                <button className="mc-btn-out" style={btnOutline}>
-                                    <Home size={14} /> Home
-                                </button>
-                            </a>
-                            <a href="/cursos" style={{ textDecoration: "none" }}>
-                                <button className="mc-btn-out" style={btnOutline}>
-                                    <ArrowLeft size={14} /> Explorar cursos
-                                </button>
-                            </a>
-                        </div>
+                        <h1
+                            className="mb-3 text-4xl font-black leading-[1.1] tracking-tight text-[#1b1b18] dark:text-[#EDEDEC] lg:text-5xl"
+                            style={{ fontFamily: "'Playfair Display', serif" }}
+                        >
+                            Mis cursos
+                        </h1>
+                        <p className="text-lg leading-relaxed text-[#706f6c] dark:text-[#A1A09A]">
+                            Continúa donde lo dejaste.
+                        </p>
                     </div>
-                </header>
-
-                {/* ══ HERO TITLE ══ */}
-                <section style={{ position: "relative", overflow: "hidden", borderBottom: "1px solid rgba(227,227,224,.6)" }}>
-                    {/* Blobs */}
-                    <div style={{ position: "absolute", top: -80, right: -80, width: 400, height: 400, borderRadius: "50%", background: "rgba(245,48,3,.04)", filter: "blur(60px)", pointerEvents: "none" }} />
-                    <div style={{ position: "absolute", bottom: 0, left: -40, width: 260, height: 260, borderRadius: "50%", background: "rgba(248,184,3,.05)", filter: "blur(50px)", pointerEvents: "none" }} />
-
-                    <div style={{ position: "relative", maxWidth: 1152, margin: "0 auto", padding: "48px 24px 40px", display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 20 }}>
-                        <div>
-                            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 999, border: "1px solid rgba(245,48,3,.25)", background: "rgba(245,48,3,.06)", padding: "4px 14px", fontSize: 12, fontWeight: 600, color: "#f53003", marginBottom: 14 }}>
-                                <BookMarked size={12} /> MI APRENDIZAJE
-                            </div>
-                            <h1 style={{ margin: "0 0 8px", fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 900, fontFamily: "'Playfair Display', serif", lineHeight: 1.1 }}>
-                                Mis Cursos
-                            </h1>
-                            <p style={{ margin: 0, fontSize: 15, color: "#706f6c" }}>Continúa donde lo dejaste</p>
-                        </div>
-
-                        {/* Stat */}
-                        <div style={{ background: "#fff", border: "1px solid #e3e3e0", borderRadius: 14, padding: "14px 22px", boxShadow: "0 2px 8px rgba(0,0,0,.04)", display: "flex", alignItems: "center", gap: 10 }}>
-                            <BookOpen size={16} color="#f53003" />
-                            <span style={{ fontSize: 13, color: "#706f6c" }}>
-                                <b style={{ color: "#1b1b18", fontSize: 22, fontFamily: "'Playfair Display', serif" }}>{cursos.length}</b> {cursos.length === 1 ? "curso inscrito" : "cursos inscritos"}
-                            </span>
-                        </div>
+                    <div className="flex items-center gap-3 rounded-2xl border border-[#e3e3e0] bg-white px-5 py-4 shadow-sm dark:border-[#2a2a26] dark:bg-[#111110]">
+                        <BookOpen className="h-5 w-5 text-[#f53003]" />
+                        <span className="text-sm text-[#706f6c] dark:text-[#A1A09A]">
+                            <strong
+                                className="text-2xl font-black text-[#1b1b18] dark:text-[#EDEDEC]"
+                                style={{ fontFamily: "'Playfair Display', serif" }}
+                            >
+                                {cursos.length}
+                            </strong>
+                            <br />
+                            {cursos.length === 1 ? 'curso inscrito' : 'cursos inscritos'}
+                        </span>
                     </div>
-                </section>
+                </div>
+            </section>
 
-                {/* ══ CONTENIDO ══ */}
-                <main style={{ maxWidth: 1152, margin: "0 auto", padding: "36px 24px 72px" }}>
-
-                    {/* Empty state */}
+            <section className="border-t border-[#e3e3e0]/60 bg-white py-12 dark:border-[#2a2a26]/60 dark:bg-[#0d0d0c]">
+                <div className="mx-auto max-w-6xl px-6 pb-16">
                     {cursos.length === 0 ? (
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "100px 0", gap: 20, textAlign: "center" }}>
-                            <div style={{ width: 80, height: 80, borderRadius: 24, background: "rgba(245,48,3,.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <BookOpen size={36} color="rgba(245,48,3,.25)" />
+                        <div className="flex flex-col items-center justify-center gap-6 py-24 text-center">
+                            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[#f53003]/8 dark:bg-[#f53003]/12">
+                                <BookOpen className="h-9 w-9 text-[#f53003]/35" />
                             </div>
                             <div>
-                                <p style={{ color: "#1b1b18", fontSize: 18, fontWeight: 700, margin: "0 0 8px", fontFamily: "'Playfair Display', serif" }}>
+                                <p
+                                    className="mb-2 text-xl font-bold text-[#1b1b18] dark:text-[#EDEDEC]"
+                                    style={{ fontFamily: "'Playfair Display', serif" }}
+                                >
                                     Aún no estás inscrito en ningún curso
                                 </p>
-                                <p style={{ color: "#706f6c", fontSize: 14, margin: 0 }}>
-                                    Explora el catálogo y comienza tu aprendizaje en VR
+                                <p className="text-sm text-[#706f6c] dark:text-[#A1A09A]">
+                                    Explora el catálogo y comienza tu aprendizaje en VR.
                                 </p>
                             </div>
-                            <a href="/cursos" style={{ textDecoration: "none" }}>
-                                <button className="mc-btn-red" style={{ ...btnRed, height: 40, paddingInline: 24 }}>
-                                    Ver cursos disponibles <ChevronRight size={14} />
-                                </button>
-                            </a>
+                            <Link href="/cursos" className={eduNavPrimary}>
+                                Ver cursos disponibles <ChevronRight className="h-4 w-4" />
+                            </Link>
                         </div>
                     ) : (
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
+                        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                             {cursos.map((curso, i) => (
                                 <article
                                     key={curso.id}
-                                    className="mc-card"
-                                    style={{ background: "#fff", border: "1px solid #e3e3e0", borderRadius: 20, overflow: "hidden", display: "flex", flexDirection: "column" }}
+                                    className="group flex flex-col overflow-hidden rounded-2xl border border-[#e3e3e0] bg-[#FDFDFC] transition-all duration-200 hover:-translate-y-1 hover:border-[#f53003]/30 hover:shadow-xl hover:shadow-[#f53003]/6 dark:border-[#2a2a26] dark:bg-[#111110]"
                                 >
-                                    {/* Imagen */}
-                                    <div style={{ position: "relative", height: 176, overflow: "hidden", background: "linear-gradient(135deg,#fff2f2,#fef9ee)" }}>
-                                        {curso.imagen
-                                            ? <img src={`/storage/${curso.imagen}`} alt={curso.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                                            : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}><BookOpen size={48} color="rgba(245,48,3,.12)" /></div>
-                                        }
-                                        {/* Número decorativo */}
-                                        <span style={{ position: "absolute", right: 12, bottom: 4, fontSize: 52, fontWeight: 900, fontFamily: "'Playfair Display', serif", color: "rgba(245,48,3,.07)", lineHeight: 1, userSelect: "none" }}>
-                                            {String(i + 1).padStart(2, "0")}
+                                    <div className="relative h-44 overflow-hidden bg-gradient-to-br from-[#fff2f2] to-[#fef9ee] dark:from-[#1D0002] dark:to-[#161200]">
+                                        {curso.imagen ? (
+                                            <img
+                                                src={`/storage/${curso.imagen}`}
+                                                alt={curso.titulo}
+                                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                            />
+                                        ) : (
+                                            <div className="flex h-full items-center justify-center">
+                                                <BookOpen className="h-14 w-14 text-[#f53003]/15" />
+                                            </div>
+                                        )}
+                                        <span
+                                            className="pointer-events-none absolute right-3 bottom-2 select-none text-5xl font-black text-[#f53003]/8"
+                                            style={{ fontFamily: "'Playfair Display', serif" }}
+                                        >
+                                            {String(i + 1).padStart(2, '0')}
                                         </span>
-                                        {/* Badge estado */}
                                         {curso.estado && (
-                                            <span style={{ position: "absolute", top: 10, right: 10, background: "rgba(10,31,22,.9)", color: "#4caf7d", fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 999, backdropFilter: "blur(4px)" }}>
+                                            <span className="absolute top-3 right-3 rounded-full bg-[#0a1f16]/90 px-2.5 py-1 text-xs font-medium text-[#4caf7d] backdrop-blur-sm">
                                                 {curso.estado}
                                             </span>
                                         )}
-                                        {/* Badge "En progreso" */}
-                                        <span style={{ position: "absolute", top: 10, left: 10, background: "rgba(245,48,3,.9)", color: "#fff", fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 999, backdropFilter: "blur(4px)" }}>
+                                        <span className="absolute top-3 left-3 rounded-full bg-[#f53003] px-2.5 py-1 text-[10px] font-bold text-white">
                                             Inscrito
                                         </span>
                                     </div>
-
-                                    {/* Body */}
-                                    <div style={{ padding: "20px", flex: 1, display: "flex", flexDirection: "column" }}>
-                                        <h2 style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 600, lineHeight: 1.3, color: "#1b1b18" }}>{curso.titulo}</h2>
-                                        <p style={{ margin: "0 0 18px", fontSize: 13, color: "#706f6c", lineHeight: 1.6, flex: 1, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                                    <div className="flex flex-1 flex-col p-5">
+                                        <h2 className="mb-2 text-[15px] font-semibold leading-snug text-[#1b1b18] transition-colors group-hover:text-[#f53003] dark:text-[#EDEDEC]">
+                                            {curso.titulo}
+                                        </h2>
+                                        <p className="mb-5 line-clamp-3 flex-1 text-sm leading-relaxed text-[#706f6c] dark:text-[#A1A09A]">
                                             {curso.descripcion}
                                         </p>
-
-                                        {/* CTA → VerCurso.tsx /curso/:id */}
-                                        <div style={{ borderTop: "1px solid rgba(227,227,224,.6)", paddingTop: 14 }}>
-                                            <a href={`/curso/${curso.id}`} style={{ textDecoration: "none", display: "block" }}>
-                                                <button
-                                                    className="mc-btn-red"
-                                                    style={{ ...btnRed, width: "100%", justifyContent: "center" }}
-                                                >
-                                                    <Play size={12} /> Continuar curso
-                                                </button>
-                                            </a>
+                                        <div className="mt-auto border-t border-[#e3e3e0]/60 pt-4 dark:border-[#2a2a26]/60">
+                                            <Link
+                                                href={`/curso/${curso.id}`}
+                                                className={`${eduNavPrimary} w-full justify-center`}
+                                            >
+                                                <Play className="h-3.5 w-3.5" /> Continuar curso
+                                            </Link>
                                         </div>
                                     </div>
                                 </article>
                             ))}
                         </div>
                     )}
-                </main>
-
-                {/* ══ FOOTER ══ */}
-                <footer style={{ borderTop: "1px solid rgba(227,227,224,.6)", padding: "20px 24px" }}>
-                    <div style={{ maxWidth: 1152, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#706f6c" }}>
-                            <div style={{ width: 20, height: 20, borderRadius: 6, background: "#f53003", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <GraduationCap size={11} color="#fff" />
-                            </div>
-                            EduPlatform © {new Date().getFullYear()}
-                        </div>
-                        <a href="/" style={{ textDecoration: "none" }}>
-                            <button className="mc-btn-out" style={{ ...btnOutline, fontSize: 12 }}>
-                                <Home size={12} /> Volver al inicio
-                            </button>
-                        </a>
-                    </div>
-                </footer>
-            </div>
-        </>
+                </div>
+            </section>
+        </EduPageShell>
     );
 }
-
-// ─── Fuentes y hover CSS ──────────────────────────────────────────────────────
-const fonts = `@import url('https://fonts.bunny.net/css?family=playfair-display:700,800,900|instrument-sans:400,500,600');
-* { box-sizing: border-box; }`;
-
-const hoverCss = `
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .mc-card { transition: transform .2s, border-color .2s, box-shadow .2s; }
-    .mc-card:hover { transform: translateY(-4px); border-color: rgba(245,48,3,.3) !important; box-shadow: 0 20px 40px rgba(245,48,3,.07) !important; }
-    .mc-btn-red { transition: background .15s; }
-    .mc-btn-red:hover { background: #d42800 !important; }
-    .mc-btn-out { transition: border-color .15s, color .15s, background .15s; }
-    .mc-btn-out:hover { border-color: rgba(245,48,3,.4) !important; color: #f53003 !important; background: rgba(245,48,3,.04) !important; }
-`;

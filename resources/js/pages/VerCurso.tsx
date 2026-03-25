@@ -1,20 +1,22 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Link } from "@inertiajs/react";
 import axios from "axios";
+import EduPageShell, { EduHeroBlobs, eduNavOutline } from "@/components/EduPageShell";
 import VRPingPong from "@/components/VRPingPong";
 import QuizMedico3D from "@/components/QuizMedico3D";
 import AnatomiaHumana3D from "@/components/AnatomiaHumana3D";
+import Computer3D from "@/components/Computer3D";
 import {
-    GraduationCap, Home, ArrowLeft, Play, ChevronDown,
+    Home, ArrowLeft, Play, ChevronDown,
     Plus, X, Edit2, Trash2, FileText, Video, Layers,
-    SkipBack, SkipForward, Monitor, Gamepad2, Zap, ScanLine, Glasses,
+    SkipBack, SkipForward, Monitor, Gamepad2, Zap, ScanLine, Glasses, Cpu,
 } from "lucide-react";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 interface Video { id: number; titulo: string; url: string; modulo_id: number; }
 interface Documento { id: number; modulo_id: number; titulo: string; archivo: string; }
 interface Modulo { id: number; titulo: string; curso_id: number; videos: Video[]; documentos?: Documento[]; }
-interface Curso { id: number; titulo: string; descripcion: string; imagen?: string; docente_id: number; estado: string; mini_juego?: string | null; }
+interface Curso { id: number; titulo: string; descripcion: string; imagen?: string; docente_id: number; estado: string; mini_juego?: string | null; categoria?: string | null; }
 
 // ─── Catálogo de mini juegos ──────────────────────────────────────────────────
 // Para agregar un juego nuevo en el futuro, solo añade una entrada aquí.
@@ -50,6 +52,11 @@ const MINI_JUEGOS_INFO: Record<string, { label: string; tag: string; icon: React
         tag: "VR",
         icon: <Glasses size={14} />,
         url: "https://konterball.com/",
+    },
+    computer_3d: {
+        label: "Computer 3D",
+        tag: "3D",
+        icon: <Cpu size={14} />,
     },
     // ── Juegos futuros ────────────────────────────────────────────────────────
     // quiz_vr:    { label: "Quiz VR",          tag: "VR",  icon: <Gamepad2 size={14} />, url: "https://..." },
@@ -213,23 +220,34 @@ export default function VerCurso({ id }: { id: number }) {
         : [];
 
     // ── Loading ──────────────────────────────────────────────────────────────
-    if (loading) return (
-        <>
-            <style>{fonts}</style>
-            <div style={{ fontFamily: "'Instrument Sans', sans-serif", background: "#FDFDFC", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
-                <div style={{ width: 40, height: 40, borderRadius: "50%", border: "2.5px solid #e3e3e0", borderTopColor: "#f53003", animation: "spin .8s linear infinite" }} />
-                <p style={{ color: "#706f6c", fontSize: 14, margin: 0 }}>Cargando curso...</p>
-                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-            </div>
-        </>
-    );
+    if (loading) {
+        return (
+            <EduPageShell
+                title="Curso"
+                navMaxWidthClass="max-w-7xl"
+                navRight={
+                    <Link href="/" className={eduNavOutline}>
+                        <Home size={14} /> Home
+                    </Link>
+                }
+            >
+                <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 px-6 py-24">
+                    <div
+                        className="h-10 w-10 animate-spin rounded-full border-2 border-[#e3e3e0] border-t-[#f53003] dark:border-[#2a2a26]"
+                        aria-hidden
+                    />
+                    <p className="text-sm text-[#706f6c] dark:text-[#A1A09A]">Cargando curso…</p>
+                </div>
+            </EduPageShell>
+        );
+    }
 
     if (!curso) return null;
 
     // ── Modal helper ─────────────────────────────────────────────────────────
     const Modal = ({ onClose, children }: { onClose: () => void; children: React.ReactNode }) => (
         <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-            <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "20px", padding: "32px", width: "100%", maxWidth: "460px", border: "1px solid #e3e3e0", boxShadow: "0 24px 60px rgba(0,0,0,.12)", display: "flex", flexDirection: "column", gap: "14px" }}>
+            <div onClick={e => e.stopPropagation()} className="flex w-full max-w-[460px] flex-col gap-4 rounded-[20px] border border-[#e3e3e0] bg-white p-8 shadow-2xl dark:border-[#2a2a26] dark:bg-[#111110]" style={{ boxShadow: "0 24px 60px rgba(0,0,0,.12)" }}>
                 {children}
             </div>
         </div>
@@ -237,10 +255,27 @@ export default function VerCurso({ id }: { id: number }) {
 
     return (
         <>
-            <style>{fonts + hoverCss}</style>
+            <style>{hoverCss}</style>
 
-            <div style={{ fontFamily: "'Instrument Sans', sans-serif", background: "#FDFDFC", minHeight: "100vh", color: "#1b1b18" }}>
-
+            <EduPageShell
+                title={curso.titulo}
+                navMaxWidthClass="max-w-7xl"
+                navMiddle={
+                    <span className="block max-w-[min(100%,280px)] truncate text-sm font-semibold text-[#1b1b18] sm:max-w-md dark:text-[#EDEDEC]">
+                        {curso.titulo}
+                    </span>
+                }
+                navRight={
+                    <>
+                        <Link href="/" className={eduNavOutline}>
+                            <Home size={14} /> Home
+                        </Link>
+                        <Link href="/cursos" className={eduNavOutline}>
+                            <ArrowLeft size={14} /> Cursos
+                        </Link>
+                    </>
+                }
+            >
                 {/* ══ MODALES ══ */}
 
                 {/* Modal agregar video */}
@@ -305,49 +340,35 @@ export default function VerCurso({ id }: { id: number }) {
                     </Modal>
                 )}
 
-                {/* ══ NAV ══ */}
-                <header style={{ position: "sticky", top: 0, zIndex: 50, borderBottom: "1px solid rgba(227,227,224,.7)", background: "rgba(253,253,252,.92)", backdropFilter: "blur(8px)" }}>
-                    <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                            <div style={{ width: 30, height: 30, borderRadius: 8, background: "#f53003", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                <GraduationCap size={15} color="#fff" />
-                            </div>
-                            <span style={{ fontSize: 14, fontWeight: 600, color: "#1b1b18", maxWidth: 280, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {curso.titulo}
-                            </span>
-                        </div>
-                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                            <a href="/" style={{ textDecoration: "none" }}>
-                                <button className="vc-btn-out" style={btnOutline}><Home size={13} /> Home</button>
-                            </a>
-                            <Link href="/cursos" style={{ textDecoration: "none" }}>
-                                <button className="vc-btn-out" style={btnOutline}><ArrowLeft size={13} /> Volver</button>
-                            </Link>
-                        </div>
-                    </div>
-                </header>
-
                 {/* ══ CABECERA DEL CURSO ══ */}
-                <section style={{ position: "relative", overflow: "hidden", borderBottom: "1px solid rgba(227,227,224,.6)" }}>
+                <section className="relative overflow-hidden border-b border-[#e3e3e0]/60 dark:border-[#2a2a26]/60">
+                    <EduHeroBlobs />
                     {curso.imagen && (
                         <>
-                            <div style={{ position: "absolute", inset: 0 }}>
-                                <img src={`/storage/${curso.imagen}`} alt={curso.titulo} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: .08 }} />
+                            <div className="pointer-events-none absolute inset-0 dark:opacity-20">
+                                <img
+                                    src={`/storage/${curso.imagen}`}
+                                    alt=""
+                                    className="h-full w-full object-cover opacity-[0.08]"
+                                />
                             </div>
-                            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, #FDFDFC 50%, transparent 100%)" }} />
+                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#FDFDFC] via-[#FDFDFC]/90 to-transparent dark:from-[#0a0a0a] dark:via-[#0a0a0a]/88 dark:to-transparent" />
                         </>
                     )}
-                    <div style={{ position: "absolute", top: -60, right: -60, width: 320, height: 320, borderRadius: "50%", background: "rgba(245,48,3,.04)", filter: "blur(50px)", pointerEvents: "none" }} />
-
-                    <div style={{ position: "relative", maxWidth: 1400, margin: "0 auto", padding: "36px 24px 32px" }}>
-                        <div style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 999, border: "1px solid rgba(245,48,3,.25)", background: "rgba(245,48,3,.06)", padding: "3px 12px", fontSize: 11, fontWeight: 600, color: "#f53003", marginBottom: 12 }}>
-                            <Monitor size={11} /> VR COURSE
+                    <div className="relative mx-auto max-w-7xl px-6 py-10 lg:py-12">
+                        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#f53003]/25 bg-[#f53003]/6 px-3 py-1 text-xs font-semibold text-[#f53003]">
+                            <Monitor size={12} /> Aula VR
                         </div>
-                        <h1 style={{ margin: "0 0 8px", fontSize: "clamp(22px, 3vw, 32px)", fontWeight: 900, fontFamily: "'Playfair Display', serif", lineHeight: 1.15, maxWidth: 700 }}>
+                        <h1
+                            className="mb-3 max-w-3xl text-3xl font-black leading-tight tracking-tight text-[#1b1b18] dark:text-[#EDEDEC] lg:text-4xl"
+                            style={{ fontFamily: "'Playfair Display', serif" }}
+                        >
                             {curso.titulo}
                         </h1>
-                        <p style={{ margin: "0 0 16px", fontSize: 14, color: "#706f6c", maxWidth: 600, lineHeight: 1.65 }}>{curso.descripcion}</p>
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <p className="mb-5 max-w-2xl text-sm leading-relaxed text-[#706f6c] dark:text-[#A1A09A] lg:text-base">
+                            {curso.descripcion}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
                             {[
                                 { icon: <Layers size={11} />, label: `${modulos.length} módulos` },
                                 { icon: <Video size={11} />, label: `${todosLosVideos.length} videos` },
@@ -368,12 +389,11 @@ export default function VerCurso({ id }: { id: number }) {
                 </section>
 
                 {/* ══ PLAYER + SIDEBAR ══ */}
-                <section>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", maxWidth: 1400, margin: "0 auto" }}>
-
+                <section className="bg-white dark:bg-[#0d0d0c]">
+                    <div className="mx-auto grid max-w-7xl grid-cols-1 md:grid-cols-[1fr_320px]">
                         {/* ── Pantalla principal ── */}
-                        <div style={{ display: "flex", flexDirection: "column", borderRight: "1px solid rgba(227,227,224,.6)" }}>
-                            <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", background: "#f5f5f3" }}>
+                        <div className="flex flex-col border-[#e3e3e0] md:border-r dark:border-[#2a2a26]">
+                            <div className="relative w-full bg-[#f5f5f3] pt-[56.25%] dark:bg-[#161615]">
                                 {videoActivo ? (
                                     isNativeVideo(videoActivo.url) ? (
                                         <video ref={videoRef} controls style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }} key={videoActivo.url}>
@@ -429,7 +449,7 @@ export default function VerCurso({ id }: { id: number }) {
                         </div>
 
                         {/* ── Sidebar playlist ── */}
-                        <aside style={{ background: "#fff", display: "flex", flexDirection: "column", minHeight: 520, maxHeight: "calc(56.25vw * (320/1400 * 1) + 300px)", borderRight: "1px solid rgba(227,227,224,.6)" }}>
+                        <aside className="flex min-h-[320px] flex-col border-[#e3e3e0] bg-white dark:border-[#2a2a26] dark:bg-[#111110] md:max-h-[calc(56.25vw+300px)] md:border-r">
                             <div style={{ padding: "14px 16px 12px", borderBottom: "1px solid rgba(227,227,224,.6)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                                 <span style={{ fontSize: 11, fontWeight: 700, color: "#706f6c", textTransform: "uppercase", letterSpacing: ".08em" }}>Contenido</span>
                                 <span style={{ fontSize: 11, color: "#706f6c", background: "#f5f5f3", border: "1px solid #e3e3e0", borderRadius: 999, padding: "2px 10px" }}>
@@ -566,7 +586,8 @@ export default function VerCurso({ id }: { id: number }) {
 
                 {/* ══ SECCIÓN MINI JUEGOS ══ */}
                 {juegosDisponibles.length > 0 && (
-                    <section style={{ maxWidth: 1400, margin: "0 auto", padding: "40px 24px 56px" }}>
+                    <section className="border-t border-[#e3e3e0]/60 bg-[#FDFDFC] px-6 py-12 dark:border-[#2a2a26]/60 dark:bg-[#0a0a0a]">
+                        <div className="mx-auto max-w-7xl">
 
                         {/* ── Encabezado de la sección ── */}
                         <div style={{ marginBottom: 28 }}>
@@ -687,6 +708,10 @@ export default function VerCurso({ id }: { id: number }) {
                                             <div style={{ padding: 24, background: "#14151c" }}>
                                                 <AnatomiaHumana3D />
                                             </div>
+                                        ) : juegoSeleccionado === "computer_3d" ? (
+                                            <div style={{ padding: 24, background: "#14151c" }}>
+                                                <Computer3D />
+                                            </div>
                                         ) : null}
                                     </div>
                                 </div>
@@ -711,32 +736,16 @@ export default function VerCurso({ id }: { id: number }) {
                                 </p>
                             </div>
                         )}
+                        </div>
                     </section>
                 )}
 
-                {/* ══ FOOTER ══ */}
-                <footer style={{ borderTop: "1px solid rgba(227,227,224,.6)", padding: "20px 24px" }}>
-                    <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#706f6c" }}>
-                            <div style={{ width: 20, height: 20, borderRadius: 6, background: "#f53003", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <GraduationCap size={11} color="#fff" />
-                            </div>
-                            EduPlatform © {new Date().getFullYear()}
-                        </div>
-                        <a href="/" style={{ textDecoration: "none" }}>
-                            <button className="vc-btn-out" style={{ ...btnOutline, fontSize: 12 }}><Home size={12} /> Volver al inicio</button>
-                        </a>
-                    </div>
-                </footer>
-            </div>
+            </EduPageShell>
         </>
     );
 }
 
-// ─── Fonts + hover CSS ────────────────────────────────────────────────────────
-const fonts = `@import url('https://fonts.bunny.net/css?family=playfair-display:700,800,900|instrument-sans:400,500,600');
-* { box-sizing: border-box; }`;
-
+// ─── Hover CSS (fuentes vía EduPageShell) ────────────────────────────────────
 const hoverCss = `
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

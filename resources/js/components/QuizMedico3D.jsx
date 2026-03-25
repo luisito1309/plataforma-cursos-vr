@@ -181,17 +181,6 @@ export default function QuizMedico3D({ preguntas: preguntasProp }) {
         fillLight.position.set(-2, 1.5, 2);
         scene.add(fillLight);
 
-        const sueloGeo = new THREE.PlaneGeometry(8, 8);
-        const sueloMat = new THREE.MeshStandardMaterial({
-            color: 0x1a1d28,
-            roughness: 0.9,
-            metalness: 0.05,
-        });
-        const suelo = new THREE.Mesh(sueloGeo, sueloMat);
-        suelo.rotation.x = -Math.PI / 2;
-        suelo.position.y = -0.01;
-        scene.add(suelo);
-
         let animationFrameId = 0;
 
         const tick = () => {
@@ -228,10 +217,6 @@ export default function QuizMedico3D({ preguntas: preguntasProp }) {
                 disposeModel(m);
                 modeloRootRef.current = null;
             }
-
-            scene.remove(suelo);
-            sueloGeo.dispose();
-            sueloMat.dispose();
 
             renderer.dispose();
             if (renderer.domElement.parentNode === mount) {
@@ -281,7 +266,7 @@ export default function QuizMedico3D({ preguntas: preguntasProp }) {
                 }
             },
             undefined,
-            () => {},
+            () => { },
         );
 
     }, [indicePregunta, juegoTerminado]);
@@ -379,7 +364,7 @@ export default function QuizMedico3D({ preguntas: preguntasProp }) {
                                 type="button"
                                 disabled={esperandoAvance}
                                 onClick={() => manejarOpcion(idx)}
-                                className="rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-left text-sm transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-left text-sm text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {opcion}
                             </button>

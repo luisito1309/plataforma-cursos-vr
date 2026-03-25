@@ -8,6 +8,7 @@ const modelos = {
     respiratorio: "/models/respiratorio.glb",
     nervioso: "/models/nervioso.glb",
     esqueleto: "/models/esqueleto.glb",
+    muscular: "/models/muscular.glb",
     organos: "/models/organos.glb",
 };
 
@@ -16,6 +17,7 @@ const SISTEMAS = [
     { key: "respiratorio", label: "Sistema respiratorio" },
     { key: "nervioso", label: "Sistema nervioso" },
     { key: "esqueleto", label: "Sistema esquelético" },
+    { key: "muscular", label: "Sistema muscular" },
     { key: "organos", label: "Órganos" },
 ];
 
@@ -239,6 +241,49 @@ function InformacionSistema({ sistema }) {
                     <PanelTexto>Largos, cortos, planos e irregulares.</PanelTexto>
                 </div>
             );
+        case "muscular":
+            return (
+                <div className="space-y-1">
+                    <h3 className="mb-2 text-base font-bold text-foreground">Sistema muscular</h3>
+                    <PanelTexto>
+                        <strong className="text-foreground/90">Función principal:</strong> movimiento, postura y
+                        estabilidad.
+                    </PanelTexto>
+                    <PanelH>Tipos de músculos</PanelH>
+                    <PanelSub>1. Músculos esqueléticos (voluntarios)</PanelSub>
+                    <PanelUl>
+                        <PanelLi>Se unen a huesos.</PanelLi>
+                        <PanelLi>~650 músculos (~40% del peso corporal).</PanelLi>
+                        <PanelLi>
+                            <strong className="text-foreground/90">Ej.:</strong> bíceps, cuádriceps.
+                        </PanelLi>
+                    </PanelUl>
+                    <PanelSub>2. Músculos lisos (involuntarios)</PanelSub>
+                    <PanelUl>
+                        <PanelLi>Paredes de órganos (intestinos, vasos).</PanelLi>
+                        <PanelLi>Controlan movimientos internos.</PanelLi>
+                    </PanelUl>
+                    <PanelSub>3. Músculo cardíaco (involuntario)</PanelSub>
+                    <PanelUl>
+                        <PanelLi>Corazón: bombea sangre.</PanelLi>
+                    </PanelUl>
+                    <PanelH>Componentes</PanelH>
+                    <PanelUl>
+                        <PanelLi>
+                            <strong className="text-foreground/90">Fibras musculares:</strong> células alargadas.
+                        </PanelLi>
+                        <PanelLi>
+                            <strong className="text-foreground/90">Tendones:</strong> conectan músculos a huesos.
+                        </PanelLi>
+                    </PanelUl>
+                    <PanelH>Funciones clave</PanelH>
+                    <PanelUl>
+                        <PanelLi>Movimiento.</PanelLi>
+                        <PanelLi>Postura y equilibrio.</PanelLi>
+                        <PanelLi>Producción de calor.</PanelLi>
+                    </PanelUl>
+                </div>
+            );
         case "organos":
             return (
                 <div className="space-y-1">
@@ -346,11 +391,17 @@ export default function AnatomiaHumana3D() {
     const rendererRef = useRef(null);
     const controlsRef = useRef(null);
     const animationRef = useRef(0);
+    const mixerRef = useRef(null);
+    const clockRef = useRef(new THREE.Clock());
     const modeloActualRef = useRef(null);
     const loadGenRef = useRef(0);
     const raycasterRef = useRef(new THREE.Raycaster());
     const pointerRef = useRef(new THREE.Vector2());
     const loaderRef = useRef(new GLTFLoader());
+
+    const annotationSpriteRef = useRef(null);
+    const highlightedRootRef = useRef(null);
+    const originalMaterialStateRef = useRef(new Map());
 
     const [sistema, setSistema] = useState("piel");
     const [organoNombre, setOrganoNombre] = useState("");
@@ -370,6 +421,22 @@ export default function AnatomiaHumana3D() {
             modeloActualRef.current = null;
         }
 
+        // Limpiar resaltado y anotación visible.
+        if (annotationSpriteRef.current) {
+            const old = annotationSpriteRef.current;
+            scene.remove(old);
+            old?.material?.map?.dispose?.();
+            old?.material?.dispose?.();
+            annotationSpriteRef.current = null;
+        }
+        highlightedRootRef.current = null;
+        originalMaterialStateRef.current.clear();
+
+        if (mixerRef.current) {
+            mixerRef.current.stopAllAction();
+            mixerRef.current = null;
+        }
+
         setCargando(true);
         setOrganoNombre("");
 
@@ -386,6 +453,20 @@ export default function AnatomiaHumana3D() {
                 fitAndCenterObject(root, 2.2);
                 scene.add(root);
                 modeloActualRef.current = root;
+
+                // Si el GLB trae animaciones, reproducirlas automáticamente.
+                if (gltf.animations && gltf.animations.length > 0) {
+                    const mixer = new THREE.AnimationMixer(root);
+                    gltf.animations.forEach((clip) => {
+                        const action = mixer.clipAction(clip);
+                        action.reset();
+                        action.play();
+                    });
+                    mixerRef.current = mixer;
+                } else {
+                    mixerRef.current = null;
+                }
+
                 setCargando(false);
             },
             undefined,
@@ -433,6 +514,12 @@ export default function AnatomiaHumana3D() {
         const loop = () => {
             animationRef.current = requestAnimationFrame(loop);
             controls.update();
+            if (mixerRef.current) mixerRef.current.update(clockRef.current.getDelta());
+
+            // Asegura que la anotación "mirando a cámara" se vea siempre legible.
+            if (annotationSpriteRef.current && cameraRef.current) {
+                annotationSpriteRef.current.quaternion.copy(cameraRef.current.quaternion);
+            }
             renderer.render(scene, camera);
         };
         loop();
@@ -462,11 +549,107 @@ export default function AnatomiaHumana3D() {
             const hits = raycasterRef.current.intersectObject(modelo, true);
             if (hits.length > 0) {
                 let o = hits[0].object;
-                while (o && (!o.name || o.name === "modelo_anatomia_root") && o.parent) {
-                    o = o.parent;
+                const tieneAnotacion = (obj) => {
+                    if (!obj) return false;
+                    const ud = obj.userData || {};
+                    const byUserData =
+                        Boolean(ud.annotation) || Boolean(ud.label) || Boolean(ud.name);
+                    const byName = Boolean(obj.name) && obj.name !== "modelo_anatomia_root";
+                    return byUserData || byName;
+                };
+                while (o && !tieneAnotacion(o) && o.parent) o = o.parent;
+
+                const annotationText =
+                    o?.userData?.annotation ||
+                    o?.userData?.label ||
+                    o?.userData?.name ||
+                    (o?.name && o.name !== "modelo_anatomia_root" ? o.name.trim() : "");
+
+                setOrganoNombre(annotationText || "(sin nombre)");
+
+                // Limpia resaltado anterior.
+                if (originalMaterialStateRef.current.size > 0) {
+                    for (const [material, state] of originalMaterialStateRef.current.entries()) {
+                        if (!material) continue;
+                        if (state?.color && material.color) material.color.copy(state.color);
+                        if (state?.emissive && material.emissive) material.emissive.copy(state.emissive);
+                    }
+                    originalMaterialStateRef.current.clear();
                 }
-                const nombre = o?.name && o.name !== "modelo_anatomia_root" ? o.name.trim() : "";
-                setOrganoNombre(nombre || "(sin nombre)");
+                if (annotationSpriteRef.current) {
+                    const old = annotationSpriteRef.current;
+                    scene.remove(old);
+                    old?.material?.map?.dispose?.();
+                    old?.material?.dispose?.();
+                    annotationSpriteRef.current = null;
+                }
+
+                // Resalta y muestra anotación en la posición seleccionada.
+                if (annotationText) {
+                    const spriteText = annotationText || "Parte seleccionada";
+                    const highlightRoot = o?.isObject3D ? o : null;
+                    highlightedRootRef.current = highlightRoot;
+
+                    // Guarda estado de materiales y aplica un brillo temporal.
+                    if (highlightRoot) {
+                        highlightRoot.traverse((child) => {
+                            if (!child?.isMesh) return;
+                            const mats = child.material;
+                            const materialList = Array.isArray(mats) ? mats : mats ? [mats] : [];
+                            materialList.forEach((m) => {
+                                if (!m) return;
+                                if (!originalMaterialStateRef.current.has(m)) {
+                                    originalMaterialStateRef.current.set(m, {
+                                        color: m.color?.clone?.() || null,
+                                        emissive: m.emissive?.clone?.() || null,
+                                    });
+                                }
+                                if (m.emissive && m.emissive.setHex) m.emissive.setHex(0xffd54a);
+                                if (m.color && m.color.setHex) m.color.setHex(0xfff1b8);
+                            });
+                        });
+                    }
+
+                    // Sprite 2D con canvas para texto (no requiere cambios en los GLB).
+                    const canvas = document.createElement("canvas");
+                    const ctx = canvas.getContext("2d");
+                    if (ctx) {
+                        const padding = 18;
+                        ctx.font = "700 32px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+                        const text = spriteText.length > 26 ? `${spriteText.slice(0, 26)}...` : spriteText;
+                        const metrics = ctx.measureText(text);
+                        const textWidth = Math.ceil(metrics.width);
+                        canvas.width = textWidth + padding * 2;
+                        canvas.height = 56 + padding;
+
+                        // Re-render para que el tamaño no afecte el layout.
+                        ctx.font = "700 32px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+                        ctx.fillStyle = "rgba(12, 13, 18, 0.95)";
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.strokeStyle = "rgba(255, 213, 74, 0.9)";
+                        ctx.lineWidth = 3;
+                        ctx.strokeRect(1.5, 1.5, canvas.width - 3, canvas.height - 3);
+                        ctx.fillStyle = "rgba(255, 255, 255, 0.96)";
+                        ctx.textBaseline = "middle";
+                        ctx.fillText(text, padding, canvas.height / 2 + 1);
+
+                        const texture = new THREE.CanvasTexture(canvas);
+                        texture.minFilter = THREE.LinearFilter;
+                        const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
+                        const sprite = new THREE.Sprite(spriteMaterial);
+
+                        // Escala básica; ajusta perceptualmente a la cámara.
+                        const dist = cam.position.distanceTo(hits[0].point);
+                        const scale = Math.max(0.0018, Math.min(0.008, dist * 0.001));
+                        sprite.scale.set(canvas.width * scale, canvas.height * scale, 1);
+
+                        sprite.position.copy(hits[0].point);
+                        sprite.position.y += 0.12;
+
+                        annotationSpriteRef.current = sprite;
+                        scene.add(sprite);
+                    }
+                }
             } else {
                 setOrganoNombre("");
             }
@@ -488,6 +671,18 @@ export default function AnatomiaHumana3D() {
                 scene.remove(m);
                 disposeModel(m);
                 modeloActualRef.current = null;
+            }
+
+            if (annotationSpriteRef.current) {
+                scene.remove(annotationSpriteRef.current);
+                annotationSpriteRef.current = null;
+            }
+            highlightedRootRef.current = null;
+            originalMaterialStateRef.current.clear();
+
+            if (mixerRef.current) {
+                mixerRef.current.stopAllAction();
+                mixerRef.current = null;
             }
 
             renderer.dispose();

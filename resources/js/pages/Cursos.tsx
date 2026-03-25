@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "@inertiajs/react";
 import axios from "axios";
+import EduPageShell, { EduHeroBlobs, eduNavOutline, eduNavPrimary } from "@/components/EduPageShell";
 import QuizMedico3D from "@/components/QuizMedico3D";
 import AnatomiaHumana3D from "@/components/AnatomiaHumana3D";
+import Computer3D from "@/components/Computer3D";
 import {
-    BookOpen, GraduationCap, Home, Plus, X,
+    BookOpen, Home, Plus, X,
     Upload, Edit2, Trash2, UserPlus, Play, Monitor,
     Gamepad2, Glasses, Cpu, Zap, ScanLine,
 } from "lucide-react";
@@ -18,11 +21,35 @@ const MINI_JUEGOS: MiniJuegoOption[] = [
     { value: "quiz_medico", label: "Quiz médico 3D", icon: <Zap size={14} />, tag: "QUIZ" },
     { value: "anatomia_humana", label: "Anatomía humana 3D", icon: <ScanLine size={14} />, tag: "3D" },
     { value: "konterball", label: "Konterball (VR web)", icon: <Glasses size={14} />, tag: "VR" },
+    { value: "computer_3d", label: "Computer 3D", icon: <Cpu size={14} />, tag: "3D" },
     // Futuros juegos — descomenta para activar:
     // { value: "vr_escape",   label: "Escape Room VR",     icon: <Glasses  size={14} />, tag: "VR"   },
     // { value: "sim_fisica",  label: "Simulación Física",  icon: <Cpu      size={14} />, tag: "SIM"  },
     // { value: "quiz_3d",     label: "Quiz Interactivo",   icon: <Zap      size={14} />, tag: "QUIZ" },
 ];
+
+type Categoria = "play" | "medicina" | "tecnologia";
+
+const CATEGORIA_LABELS: Record<Categoria, string> = {
+    play: "Play",
+    medicina: "Medicina",
+    tecnologia: "Tecnología",
+};
+
+function miniJuegosPorCategoria(cat: Categoria): MiniJuegoOption[] {
+    const pick = (values: string[]) =>
+        values.map((v) => MINI_JUEGOS.find((j) => j.value === v)).filter((j): j is MiniJuegoOption => j != null);
+    switch (cat) {
+        case "play":
+            return pick(["monster_friend", "pingpong", "konterball"]);
+        case "medicina":
+            return pick(["quiz_medico", "anatomia_humana"]);
+        case "tecnologia":
+            return pick(["", "computer_3d"]);
+        default:
+            return [];
+    }
+}
 
 interface Curso {
     id: number;
@@ -32,6 +59,7 @@ interface Curso {
     estado?: string;
     docente_id?: number;
     mini_juego?: string | null;
+    categoria?: string | null;
 }
 
 // ─── Tokens de estilo ────────────────────────────────────────────────────────
@@ -71,12 +99,21 @@ export default function Cursos() {
     const [descripcion, setDescripcion] = useState("");
     const [imagen, setImagen] = useState<File | null>(null);
     const [miniJuego, setMiniJuego] = useState("");
+    const [categoria, setCategoria] = useState<Categoria>("play");
     const [mostrarForm, setMostrarForm] = useState(false);
     const [modalEditar, setModalEditar] = useState<Curso | null>(null);
     const [editTitulo, setEditTitulo] = useState("");
     const [editDescripcion, setEditDescripcion] = useState("");
 
     useEffect(() => { cargar(); }, []);
+
+    useEffect(() => {
+        const opciones = miniJuegosPorCategoria(categoria);
+        const permitidos = new Set(opciones.map((j) => j.value));
+        if (!permitidos.has(miniJuego)) {
+            setMiniJuego(opciones[0]?.value ?? "");
+        }
+    }, [categoria, miniJuego]);
 
     const cargar = () =>
         axios.get("/api/cursos")
@@ -90,11 +127,13 @@ export default function Cursos() {
         fd.append("descripcion", descripcion);
         if (imagen) fd.append("imagen", imagen);
         if (miniJuego) fd.append("mini_juego", miniJuego);
+        fd.append("categoria", categoria);
         axios.post("/api/cursos", fd, { headers: { "Content-Type": "multipart/form-data" } })
             .then(() => {
                 cargar();
                 setTitulo(""); setDescripcion(""); setImagen(null);
                 setMiniJuego("");
+                setCategoria("play");
                 setMostrarForm(false);
             })
             .catch(e => console.error(e));
@@ -120,20 +159,50 @@ export default function Cursos() {
     // Helper para obtener info del juego por value
     const getJuego = (value: string) => MINI_JUEGOS.find(j => j.value === value);
 
+    const etiquetaCategoria = (cat: string | null | undefined) => {
+        if (cat === "play" || cat === "medicina" || cat === "tecnologia") return CATEGORIA_LABELS[cat];
+        return null;
+    };
+
     return (
         <>
             <style>{`
-                @import url('https://fonts.bunny.net/css?family=playfair-display:700,800,900|instrument-sans:400,500,600');
-                * { box-sizing: border-box; }
                 .c-card { transition: transform .2s, border-color .2s, box-shadow .2s; }
-                .c-card:hover { transform: translateY(-4px); border-color: rgba(245,48,3,.3) !important; box-shadow: 0 20px 40px rgba(245,48,3,.07) !important; }
+                .c-card:hover {
+                    transform: translateY(-4px);
+                    border-color: rgba(245, 48, 3, 0.35) !important;
+                    box-shadow: 0 20px 40px rgba(245, 48, 3, 0.08) !important;
+                }
                 .c-btn-red:hover { background: #d42800 !important; }
                 .c-btn-out:hover { border-color: rgba(245,48,3,.4) !important; color: #f53003 !important; background: rgba(245,48,3,.04) !important; }
                 .c-del:hover { background: rgba(245,48,3,.12) !important; color: #d42800 !important; }
                 .c-inp:focus { border-color: rgba(245,48,3,.5) !important; box-shadow: 0 0 0 3px rgba(245,48,3,.08); }
             `}</style>
 
-            <div style={{ fontFamily: "'Instrument Sans', sans-serif", background: "#FDFDFC", minHeight: "100vh", color: "#1b1b18" }}>
+            <EduPageShell
+                title="Cursos — EduPlatform"
+                navRight={
+                    <>
+                        <Link href="/" className={eduNavOutline}>
+                            <Home size={14} /> Home
+                        </Link>
+                        <Link href="/mis-cursos" className={eduNavOutline}>
+                            Mis cursos
+                        </Link>
+                        <button type="button" className={eduNavPrimary} onClick={() => setMostrarForm(!mostrarForm)}>
+                            {mostrarForm ? (
+                                <>
+                                    <X size={14} /> Cerrar
+                                </>
+                            ) : (
+                                <>
+                                    <Plus size={14} /> Nuevo curso
+                                </>
+                            )}
+                        </button>
+                    </>
+                }
+            >
 
                 {/* ══ MODAL EDITAR ══ */}
                 {modalEditar && (
@@ -141,7 +210,7 @@ export default function Cursos() {
                         onClick={() => setModalEditar(null)}
                         style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}
                     >
-                        <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "20px", padding: "32px", width: "100%", maxWidth: "480px", border: "1px solid #e3e3e0", boxShadow: "0 24px 60px rgba(0,0,0,.12)", display: "flex", flexDirection: "column", gap: "16px" }}>
+                        <div onClick={e => e.stopPropagation()} className="flex w-full max-w-[480px] flex-col gap-4 rounded-[20px] border border-[#e3e3e0] bg-white p-8 shadow-2xl dark:border-[#2a2a26] dark:bg-[#111110]" style={{ boxShadow: "0 24px 60px rgba(0,0,0,.12)" }}>
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                                 <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700, fontFamily: "'Playfair Display', serif" }}>Editar curso</h3>
                                 <button onClick={() => setModalEditar(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#706f6c" }}><X size={18} /></button>
@@ -162,47 +231,35 @@ export default function Cursos() {
                     </div>
                 )}
 
-                {/* ══ NAV ══ */}
-                <header style={{ position: "sticky", top: 0, zIndex: 50, borderBottom: "1px solid rgba(227,227,224,.7)", background: "rgba(253,253,252,.92)", backdropFilter: "blur(8px)" }}>
-                    <div style={{ maxWidth: 1152, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={{ width: 32, height: 32, borderRadius: 10, background: "#f53003", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <GraduationCap size={16} color="#fff" />
+                {/* ══ HERO ══ */}
+                <section className="relative overflow-hidden border-b border-[#e3e3e0]/60 dark:border-[#2a2a26]/60">
+                    <EduHeroBlobs />
+                    <div className="relative mx-auto flex max-w-6xl flex-wrap items-end justify-between gap-6 px-6 pb-10 pt-14 lg:pt-16">
+                        <div className="max-w-xl">
+                            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#f53003]/25 bg-[#f53003]/6 px-4 py-1.5 text-sm font-medium text-[#f53003]">
+                                <Monitor className="h-3.5 w-3.5" /> Plataforma VR
                             </div>
-                            <span style={{ fontSize: 15, fontWeight: 600 }}>EduPlatform</span>
-                        </div>
-                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                            <a href="/" style={{ textDecoration: "none" }}>
-                                <button className="c-btn-out" style={btnOutline}><Home size={14} /> Home</button>
-                            </a>
-                            <a href="/mis-cursos" style={{ textDecoration: "none" }}>
-                                <button className="c-btn-out" style={btnOutline}>Mis Cursos</button>
-                            </a>
-                            <button className="c-btn-red" onClick={() => setMostrarForm(!mostrarForm)} style={btnRed}>
-                                {mostrarForm ? <><X size={14} /> Cancelar</> : <><Plus size={14} /> Nuevo Curso</>}
-                            </button>
-                        </div>
-                    </div>
-                </header>
-
-                {/* ══ HERO TITLE ══ */}
-                <section style={{ position: "relative", overflow: "hidden", borderBottom: "1px solid rgba(227,227,224,.6)" }}>
-                    <div style={{ position: "absolute", top: -80, right: -80, width: 400, height: 400, borderRadius: "50%", background: "rgba(245,48,3,.04)", filter: "blur(60px)", pointerEvents: "none" }} />
-                    <div style={{ position: "absolute", bottom: 0, left: -40, width: 260, height: 260, borderRadius: "50%", background: "rgba(248,184,3,.05)", filter: "blur(50px)", pointerEvents: "none" }} />
-                    <div style={{ position: "relative", maxWidth: 1152, margin: "0 auto", padding: "48px 24px 40px", display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 20 }}>
-                        <div>
-                            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 999, border: "1px solid rgba(245,48,3,.25)", background: "rgba(245,48,3,.06)", padding: "4px 14px", fontSize: 12, fontWeight: 600, color: "#f53003", marginBottom: 14 }}>
-                                <Monitor size={12} /> VR PLATFORM
-                            </div>
-                            <h1 style={{ margin: "0 0 8px", fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 900, fontFamily: "'Playfair Display', serif", lineHeight: 1.1 }}>
-                                Plataforma de Cursos VR
+                            <h1
+                                className="mb-3 text-4xl font-black leading-[1.1] tracking-tight text-[#1b1b18] dark:text-[#EDEDEC] lg:text-5xl"
+                                style={{ fontFamily: "'Playfair Display', serif" }}
+                            >
+                                Tus cursos
                             </h1>
-                            <p style={{ margin: 0, fontSize: 15, color: "#706f6c" }}>Explora, crea y gestiona tus cursos de realidad virtual</p>
+                            <p className="text-lg leading-relaxed text-[#706f6c] dark:text-[#A1A09A]">
+                                Explora, crea y gestiona experiencias de realidad virtual como en el inicio.
+                            </p>
                         </div>
-                        <div style={{ background: "#fff", border: "1px solid #e3e3e0", borderRadius: 14, padding: "14px 22px", boxShadow: "0 2px 8px rgba(0,0,0,.04)", display: "flex", alignItems: "center", gap: 10 }}>
-                            <BookOpen size={16} color="#f53003" />
-                            <span style={{ fontSize: 13, color: "#706f6c" }}>
-                                <b style={{ color: "#1b1b18", fontSize: 22, fontFamily: "'Playfair Display', serif" }}>{cursos.length}</b> cursos disponibles
+                        <div className="flex items-center gap-3 rounded-2xl border border-[#e3e3e0] bg-white px-5 py-4 shadow-sm dark:border-[#2a2a26] dark:bg-[#111110]">
+                            <BookOpen className="h-5 w-5 text-[#f53003]" />
+                            <span className="text-sm text-[#706f6c] dark:text-[#A1A09A]">
+                                <strong
+                                    className="text-2xl font-black text-[#1b1b18] dark:text-[#EDEDEC]"
+                                    style={{ fontFamily: "'Playfair Display', serif" }}
+                                >
+                                    {cursos.length}
+                                </strong>
+                                <br />
+                                cursos en catálogo
                             </span>
                         </div>
                     </div>
@@ -210,9 +267,35 @@ export default function Cursos() {
 
                 {/* ══ FORM CREAR ══ */}
                 {mostrarForm && (
-                    <div style={{ borderBottom: "1px solid rgba(227,227,224,.6)", background: "#fff" }}>
-                        <div style={{ maxWidth: 1152, margin: "0 auto", padding: "28px 24px" }}>
+                    <div className="border-b border-[#e3e3e0]/60 bg-white dark:border-[#2a2a26]/60 dark:bg-[#0d0d0c]">
+                        <div className="mx-auto max-w-6xl px-6 py-8">
                             <h3 style={{ margin: "0 0 20px", fontSize: 16, fontWeight: 700, fontFamily: "'Playfair Display', serif" }}>Crear nuevo curso</h3>
+                            <div style={{ marginBottom: 20, display: "flex", flexDirection: "column", gap: 8 }}>
+                                <label style={labelSt}>Categoría</label>
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                                    {(["play", "medicina", "tecnologia"] as Categoria[]).map((c) => {
+                                        const activa = categoria === c;
+                                        return (
+                                            <button
+                                                key={c}
+                                                type="button"
+                                                onClick={() => setCategoria(c)}
+                                                className={activa ? "c-btn-red" : "c-btn-out"}
+                                                style={{
+                                                    ...(activa ? btnRed : btnOutline),
+                                                    borderRadius: 10,
+                                                    padding: "0 18px",
+                                                    height: 38,
+                                                    fontWeight: 600,
+                                                    fontSize: 13,
+                                                }}
+                                            >
+                                                {CATEGORIA_LABELS[c]}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 20 }}>
                                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                                     <label style={labelSt}>Título del curso</label>
@@ -244,7 +327,7 @@ export default function Cursos() {
                                             onChange={e => setMiniJuego(e.target.value)}
                                             style={{ ...inputSt, paddingLeft: 36, appearance: "none", cursor: "pointer", color: miniJuego ? "#1b1b18" : "#706f6c" }}
                                         >
-                                            {MINI_JUEGOS.map(juego => (
+                                            {miniJuegosPorCategoria(categoria).map(juego => (
                                                 <option key={juego.value} value={juego.value}>
                                                     {juego.label}{juego.tag !== "—" ? ` [${juego.tag}]` : ""}
                                                 </option>
@@ -359,6 +442,32 @@ export default function Cursos() {
                                 </div>
                             )}
 
+                            {miniJuego === "computer_3d" && (
+                                <div
+                                    style={{
+                                        marginTop: 24,
+                                        padding: "24px",
+                                        background: "#fafaf8",
+                                        borderRadius: 16,
+                                        border: "1px solid #e3e3e0",
+                                    }}
+                                >
+                                    <p
+                                        style={{
+                                            ...labelSt,
+                                            marginBottom: 12,
+                                            color: "#1b1b18",
+                                            letterSpacing: ".04em",
+                                        }}
+                                    >
+                                        Vista previa — Computer 3D
+                                    </p>
+                                    <div style={{ maxWidth: 900 }}>
+                                        <Computer3D />
+                                    </div>
+                                </div>
+                            )}
+
                             <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
                                 <button className="c-btn-red" onClick={crearCurso} style={btnRed}><Plus size={14} /> Crear Curso</button>
                             </div>
@@ -367,7 +476,19 @@ export default function Cursos() {
                 )}
 
                 {/* ══ GRID ══ */}
-                <main style={{ maxWidth: 1152, margin: "0 auto", padding: "36px 24px 72px" }}>
+                <section className="border-t border-[#e3e3e0]/60 bg-white py-12 dark:border-[#2a2a26]/60 dark:bg-[#0d0d0c]">
+                    <main className="mx-auto max-w-6xl px-6 pb-16">
+                        <div className="mb-10">
+                            <p className="mb-1.5 text-xs font-semibold uppercase tracking-widest text-[#f53003]">
+                                Catálogo
+                            </p>
+                            <h2
+                                className="text-3xl font-black tracking-tight text-[#1b1b18] dark:text-[#EDEDEC] lg:text-4xl"
+                                style={{ fontFamily: "'Playfair Display', serif" }}
+                            >
+                                Todos los cursos
+                            </h2>
+                        </div>
                     {cursos.length === 0 ? (
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "100px 0", gap: 16, textAlign: "center" }}>
                             <div style={{ width: 64, height: 64, borderRadius: 20, background: "rgba(245,48,3,.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -377,14 +498,19 @@ export default function Cursos() {
                             <button className="c-btn-red" onClick={() => setMostrarForm(true)} style={btnRed}><Plus size={14} /> Nuevo Curso</button>
                         </div>
                     ) : (
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
+                        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                             {cursos.map((curso, i) => {
                                 const juego = curso.mini_juego ? getJuego(curso.mini_juego) : null;
+                                const catLabel = etiquetaCategoria(curso.categoria);
                                 return (
-                                    <article key={`${curso.id}-${curso.titulo}`} className="c-card" style={{ background: "#fff", border: "1px solid #e3e3e0", borderRadius: 20, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                                    <article
+                                        key={`${curso.id}-${curso.titulo}`}
+                                        className="c-card group flex flex-col overflow-hidden rounded-2xl border border-[#e3e3e0] bg-[#FDFDFC] dark:border-[#2a2a26] dark:bg-[#111110]"
+                                        style={{ boxShadow: "0 1px 0 rgba(0,0,0,.04)" }}
+                                    >
 
                                         {/* Imagen */}
-                                        <div style={{ position: "relative", height: 176, overflow: "hidden", background: "linear-gradient(135deg,#fff2f2,#fef9ee)" }}>
+                                        <div className="relative h-44 overflow-hidden bg-gradient-to-br from-[#fff2f2] to-[#fef9ee] dark:from-[#1D0002] dark:to-[#161200]">
                                             {curso.imagen
                                                 ? <img src={`/storage/${curso.imagen}`} alt={curso.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                                 : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}><BookOpen size={48} color="rgba(245,48,3,.12)" /></div>
@@ -408,6 +534,11 @@ export default function Cursos() {
                                         {/* Body */}
                                         <div style={{ padding: "20px 20px 20px", flex: 1, display: "flex", flexDirection: "column" }}>
                                             <h2 style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 600, lineHeight: 1.3, color: "#1b1b18" }}>{curso.titulo}</h2>
+                                            {catLabel && (
+                                                <span style={{ display: "inline-flex", marginBottom: 10, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "#0c4a6e", background: "#e0f2fe", border: "1px solid #7dd3fc", borderRadius: 999, padding: "3px 10px", alignSelf: "flex-start" }}>
+                                                    {catLabel}
+                                                </span>
+                                            )}
                                             <p style={{ margin: "0 0 18px", fontSize: 13, color: "#706f6c", lineHeight: 1.6, flex: 1, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                                                 {curso.descripcion}
                                             </p>
@@ -442,23 +573,9 @@ export default function Cursos() {
                             })}
                         </div>
                     )}
-                </main>
-
-                {/* ══ FOOTER ══ */}
-                <footer style={{ borderTop: "1px solid rgba(227,227,224,.6)", padding: "20px 24px" }}>
-                    <div style={{ maxWidth: 1152, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#706f6c" }}>
-                            <div style={{ width: 20, height: 20, borderRadius: 6, background: "#f53003", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <GraduationCap size={11} color="#fff" />
-                            </div>
-                            EduPlatform © {new Date().getFullYear()}
-                        </div>
-                        <a href="/" style={{ textDecoration: "none" }}>
-                            <button className="c-btn-out" style={{ ...btnOutline, fontSize: 12 }}><Home size={12} /> Volver al inicio</button>
-                        </a>
-                    </div>
-                </footer>
-            </div>
+                    </main>
+                </section>
+            </EduPageShell>
         </>
     );
 }
