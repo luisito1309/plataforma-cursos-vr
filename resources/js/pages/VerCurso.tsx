@@ -7,6 +7,7 @@ import VRPingPong from "@/components/VRPingPong";
 import QuizMedico3D from "@/components/QuizMedico3D";
 import AnatomiaHumana3D from "@/components/AnatomiaHumana3D";
 import Computer3D from "@/components/Computer3D";
+import MiniJuegoProgreso from "@/components/MiniJuegoProgreso";
 import {
     Home, ArrowLeft, Play, ChevronDown,
     Plus, X, Edit2, Trash2, FileText, Video, Layers,
@@ -122,7 +123,7 @@ export default function VerCurso({ id }: { id: number }) {
 
     // Estado para controlar qué juego está seleccionado en la sección de mini juegos
     const [juegoSeleccionado, setJuegoSeleccionado] = useState<string | null>(null);
-    /** Mini juegos con progreso local (Computer 3D, Anatomía): sustituye "pendiente" en chip al completar. */
+    /** Mini juegos con progreso en localStorage: sustituye el estado del curso por "Completado" en el chip al finalizar. */
     const [miniJuegoLocalListo, setMiniJuegoLocalListo] = useState(false);
 
     const [modalVideo, setModalVideo] = useState<{ modulo_id: number } | null>(null);
@@ -717,22 +718,47 @@ export default function VerCurso({ id }: { id: number }) {
 
                                         {/* Contenido del juego */}
                                         {juego.url ? (
-                                            <div style={{ position: "relative", width: "100%", paddingTop: "56.25%" }}>
-                                                <iframe
-                                                    src={juego.url}
-                                                    title={juego.label}
-                                                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none", display: "block" }}
-                                                    allow="fullscreen; autoplay; xr-spatial-tracking; gyroscope; accelerometer"
-                                                    loading="lazy"
-                                                />
+                                            <div style={{ padding: 24, background: "#14151c" }}>
+                                                <MiniJuegoProgreso
+                                                    key={juegoSeleccionado}
+                                                    cursoId={id}
+                                                    storageKey={juegoSeleccionado}
+                                                    onCompletado={() => setMiniJuegoLocalListo(true)}
+                                                    interaccionIframe
+                                                >
+                                                    <div style={{ position: "relative", width: "100%", paddingTop: "56.25%" }}>
+                                                        <iframe
+                                                            src={juego.url}
+                                                            title={juego.label}
+                                                            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none", display: "block" }}
+                                                            allow="fullscreen; autoplay; xr-spatial-tracking; gyroscope; accelerometer"
+                                                            loading="lazy"
+                                                        />
+                                                    </div>
+                                                </MiniJuegoProgreso>
                                             </div>
                                         ) : juegoSeleccionado === "pingpong" ? (
-                                            <div style={{ padding: 24 }}>
-                                                <VRPingPong />
+                                            <div style={{ padding: 24, background: "#14151c" }}>
+                                                <MiniJuegoProgreso
+                                                    key={juegoSeleccionado}
+                                                    cursoId={id}
+                                                    storageKey="pingpong"
+                                                    onCompletado={() => setMiniJuegoLocalListo(true)}
+                                                    interaccionIframe
+                                                >
+                                                    <VRPingPong />
+                                                </MiniJuegoProgreso>
                                             </div>
                                         ) : juegoSeleccionado === "quiz_medico" ? (
                                             <div style={{ padding: 24, background: "#14151c" }}>
-                                                <QuizMedico3D />
+                                                <MiniJuegoProgreso
+                                                    key={juegoSeleccionado}
+                                                    cursoId={id}
+                                                    storageKey="quiz_medico"
+                                                    onCompletado={() => setMiniJuegoLocalListo(true)}
+                                                >
+                                                    <QuizMedico3D />
+                                                </MiniJuegoProgreso>
                                             </div>
                                         ) : juegoSeleccionado === "anatomia_humana" ? (
                                             <div style={{ padding: 24, background: "#14151c" }}>

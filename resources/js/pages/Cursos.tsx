@@ -6,6 +6,7 @@ import { isMinijuegoOk, miniJuegoTieneProgresoLocal } from "@/lib/minijuegoStora
 import QuizMedico3D from "@/components/QuizMedico3D";
 import AnatomiaHumana3D from "@/components/AnatomiaHumana3D";
 import Computer3D from "@/components/Computer3D";
+import MiniJuegoProgreso from "@/components/MiniJuegoProgreso";
 import {
     BookOpen, Home, Plus, X,
     Upload, Edit2, Trash2, UserPlus, Play, Monitor,
@@ -385,7 +386,9 @@ export default function Cursos() {
                                         Vista previa — Quiz médico 3D
                                     </p>
                                     <div style={{ maxWidth: 720 }}>
-                                        <QuizMedico3D />
+                                        <MiniJuegoProgreso cursoId={0} storageKey="quiz_medico">
+                                            <QuizMedico3D />
+                                        </MiniJuegoProgreso>
                                     </div>
                                 </div>
                             )}
@@ -436,19 +439,21 @@ export default function Cursos() {
                                     >
                                         Vista previa — Konterball
                                     </p>
-                                    <iframe
-                                        src="https://konterball.com/"
-                                        title="Konterball"
-                                        style={{
-                                            width: "100%",
-                                            height: 520,
-                                            border: "none",
-                                            borderRadius: 12,
-                                            background: "#0a0b12",
-                                        }}
-                                        allow="xr-spatial-tracking; fullscreen; gyroscope; accelerometer"
-                                        loading="lazy"
-                                    />
+                                    <MiniJuegoProgreso cursoId={0} storageKey="konterball" interaccionIframe>
+                                        <iframe
+                                            src="https://konterball.com/"
+                                            title="Konterball"
+                                            style={{
+                                                width: "100%",
+                                                height: 520,
+                                                border: "none",
+                                                borderRadius: 12,
+                                                background: "#0a0b12",
+                                            }}
+                                            allow="xr-spatial-tracking; fullscreen; gyroscope; accelerometer"
+                                            loading="lazy"
+                                        />
+                                    </MiniJuegoProgreso>
                                     <p style={{ margin: "10px 0 0", fontSize: 12, color: "#706f6c" }}>
                                         <a href="https://konterball.com/" target="_blank" rel="noopener noreferrer" style={{ color: "#f53003" }}>
                                             Abrir Konterball en pestaña nueva

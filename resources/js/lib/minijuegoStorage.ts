@@ -25,7 +25,14 @@ export function setMinijuegoOk(cursoId: number, juego: string): void {
     }
 }
 
-export const MINIJUEGOS_CON_PROGRESO_LOCAL = ['computer_3d', 'anatomia_humana'] as const;
+export const MINIJUEGOS_CON_PROGRESO_LOCAL = [
+    'computer_3d',
+    'anatomia_humana',
+    'quiz_medico',
+    'pingpong',
+    'monster_friend',
+    'konterball',
+] as const;
 
 export function miniJuegoTieneProgresoLocal(juego: string | null | undefined): boolean {
     return Boolean(juego && MINIJUEGOS_CON_PROGRESO_LOCAL.includes(juego as (typeof MINIJUEGOS_CON_PROGRESO_LOCAL)[number]));
