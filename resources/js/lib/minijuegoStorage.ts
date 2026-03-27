@@ -32,6 +32,7 @@ export const MINIJUEGOS_CON_PROGRESO_LOCAL = [
     'pingpong',
     'monster_friend',
     'konterball',
+    'creative_box',
 ] as const;
 
 export function miniJuegoTieneProgresoLocal(juego: string | null | undefined): boolean {

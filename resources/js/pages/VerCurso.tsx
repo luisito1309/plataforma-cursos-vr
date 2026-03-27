@@ -8,10 +8,15 @@ import QuizMedico3D from "@/components/QuizMedico3D";
 import AnatomiaHumana3D from "@/components/AnatomiaHumana3D";
 import Computer3D from "@/components/Computer3D";
 import MiniJuegoProgreso from "@/components/MiniJuegoProgreso";
+import CreativeBox from "@/components/CreativeBox";
+import {
+    MinijuegoFullscreenToggleButton,
+    minijuegoTienePantallaCompleta,
+} from "@/components/MinijuegoFullscreenControls";
 import {
     Home, ArrowLeft, Play, ChevronDown,
     Plus, X, Edit2, Trash2, FileText, Video, Layers,
-    SkipBack, SkipForward, Monitor, Gamepad2, Zap, ScanLine, Glasses, Cpu,
+    SkipBack, SkipForward, Monitor, Gamepad2, Zap, ScanLine, Glasses, Cpu, Box,
 } from "lucide-react";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
@@ -59,6 +64,11 @@ const MINI_JUEGOS_INFO: Record<string, { label: string; tag: string; icon: React
         label: "Computer 3D",
         tag: "3D",
         icon: <Cpu size={14} />,
+    },
+    creative_box: {
+        label: "Creative Box",
+        tag: "VOX",
+        icon: <Box size={14} />,
     },
     // ── Juegos futuros ────────────────────────────────────────────────────────
     // quiz_vr:    { label: "Quiz VR",          tag: "VR",  icon: <Gamepad2 size={14} />, url: "https://..." },
@@ -132,6 +142,7 @@ export default function VerCurso({ id }: { id: number }) {
     const [editTituloModulo, setEditTituloModulo] = useState("");
     const [modalDocumento, setModalDocumento] = useState<{ modulo_id: number } | null>(null);
     const [formDocumento, setFormDocumento] = useState({ titulo: "", archivo: null as File | null });
+    const miniJuegoCardRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => { cargarCurso(); }, []);
     useEffect(() => { if (videoRef.current) videoRef.current.load(); }, [videoActivo?.url]);
@@ -683,12 +694,16 @@ export default function VerCurso({ id }: { id: number }) {
                             return (
                                 <div style={{ animation: "fadeInUp .25s ease" }}>
                                     {/* Card contenedora */}
-                                    <div style={{
-                                        borderRadius: 20, overflow: "hidden",
-                                        border: "1px solid rgba(227,227,224,.8)",
-                                        boxShadow: "0 8px 40px rgba(0,0,0,.07)",
-                                        background: "#1b1b18",
-                                    }}>
+                                    <div
+                                        ref={miniJuegoCardRef}
+                                        style={{
+                                            position: "relative",
+                                            borderRadius: 20, overflow: "hidden",
+                                            border: "1px solid rgba(227,227,224,.8)",
+                                            boxShadow: "0 8px 40px rgba(0,0,0,.07)",
+                                            background: "#1b1b18",
+                                        }}
+                                    >
                                         {/* Barra superior del juego */}
                                         <div style={{
                                             display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -707,13 +722,18 @@ export default function VerCurso({ id }: { id: number }) {
                                                     {juego.label}
                                                 </span>
                                             </div>
-                                            <span style={{
-                                                fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.4)",
-                                                background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)",
-                                                padding: "3px 10px", borderRadius: 999, letterSpacing: ".07em"
-                                            }}>
-                                                {juego.tag}
-                                            </span>
+                                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                                {minijuegoTienePantallaCompleta(juegoSeleccionado) && (
+                                                    <MinijuegoFullscreenToggleButton containerRef={miniJuegoCardRef} />
+                                                )}
+                                                <span style={{
+                                                    fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.4)",
+                                                    background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)",
+                                                    padding: "3px 10px", borderRadius: 999, letterSpacing: ".07em"
+                                                }}>
+                                                    {juego.tag}
+                                                </span>
+                                            </div>
                                         </div>
 
                                         {/* Contenido del juego */}
@@ -772,6 +792,16 @@ export default function VerCurso({ id }: { id: number }) {
                                                 <Computer3D
                                                     cursoId={id}
                                                     onCompletado={() => setMiniJuegoLocalListo(true)}
+                                                />
+                                            </div>
+                                        ) : juegoSeleccionado === "creative_box" ? (
+                                            <div style={{ padding: 24, background: "#0a0e14" }}>
+                                                <CreativeBox
+                                                    cursoId={id}
+                                                    onCompletado={() => {
+                                                        setMiniJuegoLocalListo(true);
+                                                        cargarCurso();
+                                                    }}
                                                 />
                                             </div>
                                         ) : null}

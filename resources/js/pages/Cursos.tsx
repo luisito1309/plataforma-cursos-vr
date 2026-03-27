@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "@inertiajs/react";
 import axios from "axios";
 import EduPageShell, { EduHeroBlobs, eduNavOutline, eduNavPrimary } from "@/components/EduPageShell";
@@ -7,10 +7,12 @@ import QuizMedico3D from "@/components/QuizMedico3D";
 import AnatomiaHumana3D from "@/components/AnatomiaHumana3D";
 import Computer3D from "@/components/Computer3D";
 import MiniJuegoProgreso from "@/components/MiniJuegoProgreso";
+import CreativeBox from "@/components/CreativeBox";
+import { MinijuegoFullscreenToggleButton } from "@/components/MinijuegoFullscreenControls";
 import {
     BookOpen, Home, Plus, X,
     Upload, Edit2, Trash2, UserPlus, Play, Monitor,
-    Gamepad2, Glasses, Cpu, Zap, ScanLine,
+    Gamepad2, Glasses, Cpu, Zap, ScanLine, Box,
 } from "lucide-react";
 
 // ─── Catálogo de mini juegos (escalable) ─────────────────────────────────────
@@ -24,18 +26,20 @@ const MINI_JUEGOS: MiniJuegoOption[] = [
     { value: "anatomia_humana", label: "Anatomía humana 3D", icon: <ScanLine size={14} />, tag: "3D" },
     { value: "konterball", label: "Konterball (VR web)", icon: <Glasses size={14} />, tag: "VR" },
     { value: "computer_3d", label: "Computer 3D", icon: <Cpu size={14} />, tag: "3D" },
+    { value: "creative_box", label: "Creative Box", icon: <Box size={14} />, tag: "VOX" },
     // Futuros juegos — descomenta para activar:
     // { value: "vr_escape",   label: "Escape Room VR",     icon: <Glasses  size={14} />, tag: "VR"   },
     // { value: "sim_fisica",  label: "Simulación Física",  icon: <Cpu      size={14} />, tag: "SIM"  },
     // { value: "quiz_3d",     label: "Quiz Interactivo",   icon: <Zap      size={14} />, tag: "QUIZ" },
 ];
 
-type Categoria = "play" | "medicina" | "tecnologia";
+type Categoria = "play" | "medicina" | "tecnologia" | "creativo";
 
 const CATEGORIA_LABELS: Record<Categoria, string> = {
     play: "Play",
     medicina: "Medicina",
     tecnologia: "Tecnología",
+    creativo: "Creativo",
 };
 
 function miniJuegosPorCategoria(cat: Categoria): MiniJuegoOption[] {
@@ -48,6 +52,8 @@ function miniJuegosPorCategoria(cat: Categoria): MiniJuegoOption[] {
             return pick(["quiz_medico", "anatomia_humana"]);
         case "tecnologia":
             return pick(["", "computer_3d"]);
+        case "creativo":
+            return pick(["creative_box"]);
         default:
             return [];
     }
@@ -93,6 +99,53 @@ const labelSt: React.CSSProperties = {
     fontSize: "11px", fontWeight: 600, color: "#706f6c",
     textTransform: "uppercase", letterSpacing: ".07em",
 };
+
+/** Vista previa del formulario con control de pantalla completa (Medicina / Tecnología / Creativo). */
+function PreviaMinijuegoConFullscreen({
+    titulo,
+    tituloColor,
+    wrapStyle,
+    botonClaro,
+    children,
+}: {
+    titulo: string;
+    tituloColor?: string;
+    wrapStyle: React.CSSProperties;
+    botonClaro?: boolean;
+    children: React.ReactNode;
+}) {
+    const ref = useRef<HTMLDivElement>(null);
+    const temaBtn = botonClaro
+        ? { border: "1px solid rgba(255,255,255,.28)", background: "rgba(255,255,255,.1)", color: "#e8e6ff" as const }
+        : { border: "1px solid #d1d0cc", background: "#fff", color: "#1b1b18" as const };
+    return (
+        <div ref={ref} style={{ ...wrapStyle, position: "relative" }}>
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    marginBottom: 12,
+                    flexWrap: "wrap",
+                }}
+            >
+                <p
+                    style={{
+                        ...labelSt,
+                        margin: 0,
+                        color: tituloColor ?? "#1b1b18",
+                        letterSpacing: ".04em",
+                    }}
+                >
+                    {titulo}
+                </p>
+                <MinijuegoFullscreenToggleButton containerRef={ref} buttonStyle={temaBtn} />
+            </div>
+            {children}
+        </div>
+    );
+}
 
 // ─── Componente ──────────────────────────────────────────────────────────────
 function etiquetaEstadoCurso(curso: Curso): string {
@@ -176,7 +229,7 @@ export default function Cursos() {
     const getJuego = (value: string) => MINI_JUEGOS.find(j => j.value === value);
 
     const etiquetaCategoria = (cat: string | null | undefined) => {
-        if (cat === "play" || cat === "medicina" || cat === "tecnologia") return CATEGORIA_LABELS[cat];
+        if (cat === "play" || cat === "medicina" || cat === "tecnologia" || cat === "creativo") return CATEGORIA_LABELS[cat];
         return null;
     };
 
@@ -289,7 +342,7 @@ export default function Cursos() {
                             <div style={{ marginBottom: 20, display: "flex", flexDirection: "column", gap: 8 }}>
                                 <label style={labelSt}>Categoría</label>
                                 <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                                    {(["play", "medicina", "tecnologia"] as Categoria[]).map((c) => {
+                                    {(["play", "medicina", "tecnologia", "creativo"] as Categoria[]).map((c) => {
                                         const activa = categoria === c;
                                         return (
                                             <button
@@ -366,8 +419,9 @@ export default function Cursos() {
                             </div>
 
                             {miniJuego === "quiz_medico" && (
-                                <div
-                                    style={{
+                                <PreviaMinijuegoConFullscreen
+                                    titulo="Vista previa — Quiz médico 3D"
+                                    wrapStyle={{
                                         marginTop: 24,
                                         padding: "24px",
                                         background: "#fafaf8",
@@ -375,27 +429,18 @@ export default function Cursos() {
                                         border: "1px solid #e3e3e0",
                                     }}
                                 >
-                                    <p
-                                        style={{
-                                            ...labelSt,
-                                            marginBottom: 12,
-                                            color: "#1b1b18",
-                                            letterSpacing: ".04em",
-                                        }}
-                                    >
-                                        Vista previa — Quiz médico 3D
-                                    </p>
                                     <div style={{ maxWidth: 720 }}>
                                         <MiniJuegoProgreso cursoId={0} storageKey="quiz_medico">
                                             <QuizMedico3D />
                                         </MiniJuegoProgreso>
                                     </div>
-                                </div>
+                                </PreviaMinijuegoConFullscreen>
                             )}
 
                             {miniJuego === "anatomia_humana" && (
-                                <div
-                                    style={{
+                                <PreviaMinijuegoConFullscreen
+                                    titulo="Vista previa — Anatomía humana 3D"
+                                    wrapStyle={{
                                         marginTop: 24,
                                         padding: "24px",
                                         background: "#fafaf8",
@@ -403,20 +448,10 @@ export default function Cursos() {
                                         border: "1px solid #e3e3e0",
                                     }}
                                 >
-                                    <p
-                                        style={{
-                                            ...labelSt,
-                                            marginBottom: 12,
-                                            color: "#1b1b18",
-                                            letterSpacing: ".04em",
-                                        }}
-                                    >
-                                        Vista previa — Anatomía humana 3D
-                                    </p>
                                     <div style={{ maxWidth: 900 }}>
                                         <AnatomiaHumana3D />
                                     </div>
-                                </div>
+                                </PreviaMinijuegoConFullscreen>
                             )}
 
                             {miniJuego === "konterball" && (
@@ -463,8 +498,9 @@ export default function Cursos() {
                             )}
 
                             {miniJuego === "computer_3d" && (
-                                <div
-                                    style={{
+                                <PreviaMinijuegoConFullscreen
+                                    titulo="Vista previa — Computer 3D"
+                                    wrapStyle={{
                                         marginTop: 24,
                                         padding: "24px",
                                         background: "#fafaf8",
@@ -472,20 +508,27 @@ export default function Cursos() {
                                         border: "1px solid #e3e3e0",
                                     }}
                                 >
-                                    <p
-                                        style={{
-                                            ...labelSt,
-                                            marginBottom: 12,
-                                            color: "#1b1b18",
-                                            letterSpacing: ".04em",
-                                        }}
-                                    >
-                                        Vista previa — Computer 3D
-                                    </p>
                                     <div style={{ maxWidth: 900 }}>
                                         <Computer3D />
                                     </div>
-                                </div>
+                                </PreviaMinijuegoConFullscreen>
+                            )}
+
+                            {miniJuego === "creative_box" && (
+                                <PreviaMinijuegoConFullscreen
+                                    titulo="Vista previa — Creative Box (voxel)"
+                                    tituloColor="#e8e6ff"
+                                    botonClaro
+                                    wrapStyle={{
+                                        marginTop: 24,
+                                        padding: "24px",
+                                        background: "#0f1118",
+                                        borderRadius: 16,
+                                        border: "1px solid #e3e3e0",
+                                    }}
+                                >
+                                    <CreativeBox preview cursoId={0} />
+                                </PreviaMinijuegoConFullscreen>
                             )}
 
                             <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>

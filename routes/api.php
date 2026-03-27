@@ -38,6 +38,9 @@ Route::get('/cursos/{id}', [CursoController::class, 'show']);
 // Actualizar curso
 Route::put('/cursos/{id}', [CursoController::class, 'update']);
 
+// Acciones Creative Box (progreso / telemetría)
+Route::post('/cursos/{id}/creative-accion', [CursoController::class, 'registrarCreativeAccion']);
+
 // Eliminar curso
 Route::delete('/cursos/{id}', [CursoController::class, 'destroy']);
 

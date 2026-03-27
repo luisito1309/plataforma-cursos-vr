@@ -27,7 +27,7 @@ class CursoController extends Controller
     $miniJuego = ($miniJuego !== null && $miniJuego !== '') ? $miniJuego : null;
 
     $categoria = $request->input('categoria');
-    $allowedCat = ['play', 'medicina', 'tecnologia'];
+    $allowedCat = ['play', 'medicina', 'tecnologia', 'creativo'];
     if (! is_string($categoria) || ! in_array($categoria, $allowedCat, true)) {
         $categoria = 'tecnologia';
     }
@@ -92,4 +92,16 @@ class CursoController extends Controller
 
     return response()->json($curso->modulos);
 }
+
+    /** Registro opcional de acciones del minijuego Creative Box (extensible a BD). */
+    public function registrarCreativeAccion(Request $request, $id)
+    {
+        $curso = Curso::find($id);
+
+        if (! $curso) {
+            return response()->json(['mensaje' => 'Curso no encontrado'], 404);
+        }
+
+        return response()->json(['ok' => true, 'payload' => $request->all()]);
+    }
 }
