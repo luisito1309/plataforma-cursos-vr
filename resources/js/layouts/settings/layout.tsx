@@ -1,9 +1,11 @@
 import { Link } from '@inertiajs/react';
+import { motion, useReducedMotion } from 'framer-motion';
 import type { PropsWithChildren } from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/hooks/use-current-url';
+import { pageEnter, rm } from '@/lib/edu-motion';
 import { cn, toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit } from '@/routes/profile';
@@ -30,6 +32,8 @@ const sidebarNavItems: NavItem[] = [
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
+    const reduce = useReducedMotion();
+    const v = rm(reduce, pageEnter);
 
     // When server-side rendering, we only render the layout on the client...
     if (typeof window === 'undefined') {
@@ -43,7 +47,12 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                 description="Manage your profile and account settings"
             />
 
-            <div className="flex flex-col lg:flex-row lg:space-x-12">
+            <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={v}
+                className="flex flex-col lg:flex-row lg:space-x-12"
+            >
                 <aside className="w-full max-w-xl lg:w-48">
                     <nav
                         className="flex flex-col space-y-1 space-x-0"
@@ -77,7 +86,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                         {children}
                     </section>
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 }
