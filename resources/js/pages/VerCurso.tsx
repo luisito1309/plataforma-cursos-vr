@@ -2,6 +2,17 @@ import React, { useEffect, useState, useRef } from "react";
 import { Link } from "@inertiajs/react";
 import axios from "axios";
 import EduPageShell, { EduHeroBlobs, eduNavOutline } from "@/components/EduPageShell";
+import {
+    eduBadgeEyebrow,
+    eduBtnPrimary,
+    eduBtnOutline,
+    eduInput,
+    eduLabel,
+    eduModalBackdrop,
+    eduModalCard,
+    eduSpinner,
+} from "@/lib/edu-ui";
+import { cn } from "@/lib/utils";
 import { isMinijuegoOk, miniJuegoTieneProgresoLocal } from "@/lib/minijuegoStorage";
 import VRPingPong from "@/components/VRPingPong";
 import QuizMedico3D from "@/components/QuizMedico3D";
@@ -9,6 +20,7 @@ import AnatomiaHumana3D from "@/components/AnatomiaHumana3D";
 import Computer3D from "@/components/Computer3D";
 import MiniJuegoProgreso from "@/components/MiniJuegoProgreso";
 import CreativeBox from "@/components/CreativeBox";
+import GamesFPS from "@/components/GamesFPS";
 import {
     MinijuegoFullscreenToggleButton,
     minijuegoTienePantallaCompleta,
@@ -16,7 +28,7 @@ import {
 import {
     Home, ArrowLeft, Play, ChevronDown,
     Plus, X, Edit2, Trash2, FileText, Video, Layers,
-    SkipBack, SkipForward, Monitor, Gamepad2, Zap, ScanLine, Glasses, Cpu, Box,
+    SkipBack, SkipForward, Monitor, Gamepad2, Zap, ScanLine, Glasses, Cpu, Box, Crosshair,
 } from "lucide-react";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
@@ -96,29 +108,6 @@ function toEmbedUrl(url: string): string {
     } catch { return url; }
 }
 const isNativeVideo = (url: string) => /\.(mp4|webm|ogg)(\?|$)/i.test(url);
-
-// ─── Tokens ──────────────────────────────────────────────────────────────────
-const btnRed: React.CSSProperties = {
-    background: "#f53003", color: "#fff", border: "none", borderRadius: "10px",
-    padding: "0 16px", height: "34px", fontSize: "12px",
-    fontFamily: "'Instrument Sans', sans-serif", fontWeight: 600,
-    cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px",
-};
-const btnOutline: React.CSSProperties = {
-    background: "#fff", color: "#706f6c", border: "1px solid #d1d0cc",
-    borderRadius: "10px", padding: "0 14px", height: "34px", fontSize: "12px",
-    fontFamily: "'Instrument Sans', sans-serif", fontWeight: 500,
-    cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px",
-};
-const inputSt: React.CSSProperties = {
-    background: "#FDFDFC", border: "1px solid #d1d0cc", borderRadius: "10px",
-    padding: "9px 12px", color: "#1b1b18", fontSize: "13px",
-    fontFamily: "'Instrument Sans', sans-serif", width: "100%", outline: "none",
-};
-const labelSt: React.CSSProperties = {
-    fontSize: "11px", fontWeight: 600, color: "#706f6c",
-    textTransform: "uppercase", letterSpacing: ".07em",
-};
 
 // ─── Componente ──────────────────────────────────────────────────────────────
 export default function VerCurso({ id }: { id: number }) {
@@ -265,11 +254,8 @@ export default function VerCurso({ id }: { id: number }) {
                 }
             >
                 <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 px-6 py-24">
-                    <div
-                        className="h-10 w-10 animate-spin rounded-full border-2 border-[#e3e3e0] border-t-[#f53003] dark:border-[#2a2a26]"
-                        aria-hidden
-                    />
-                    <p className="text-sm text-[#706f6c] dark:text-[#A1A09A]">Cargando curso…</p>
+                    <div className={eduSpinner} aria-hidden />
+                    <p className="text-sm text-slate-400">Cargando curso…</p>
                 </div>
             </EduPageShell>
         );
@@ -279,8 +265,8 @@ export default function VerCurso({ id }: { id: number }) {
 
     // ── Modal helper ─────────────────────────────────────────────────────────
     const Modal = ({ onClose, children }: { onClose: () => void; children: React.ReactNode }) => (
-        <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-            <div onClick={e => e.stopPropagation()} className="flex w-full max-w-[460px] flex-col gap-4 rounded-[20px] border border-[#e3e3e0] bg-white p-8 shadow-2xl dark:border-[#2a2a26] dark:bg-[#111110]" style={{ boxShadow: "0 24px 60px rgba(0,0,0,.12)" }}>
+        <div className={eduModalBackdrop} onClick={onClose}>
+            <div onClick={(e) => e.stopPropagation()} className={`${eduModalCard} flex max-w-[460px] flex-col gap-4`}>
                 {children}
             </div>
         </div>
@@ -294,7 +280,7 @@ export default function VerCurso({ id }: { id: number }) {
                 title={curso.titulo}
                 navMaxWidthClass="max-w-7xl"
                 navMiddle={
-                    <span className="block max-w-[min(100%,280px)] truncate text-sm font-semibold text-[#1b1b18] sm:max-w-md dark:text-[#EDEDEC]">
+                    <span className="block max-w-[min(100%,280px)] truncate text-sm font-semibold text-slate-200 sm:max-w-md">
                         {curso.titulo}
                     </span>
                 }
@@ -314,21 +300,27 @@ export default function VerCurso({ id }: { id: number }) {
                 {/* Modal agregar video */}
                 {modalVideo && (
                     <Modal onClose={() => setModalVideo(null)}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                            <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, fontFamily: "'Playfair Display', serif" }}>Agregar video</h3>
-                            <button onClick={() => setModalVideo(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#706f6c" }}><X size={18} /></button>
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold text-white">Agregar video</h3>
+                            <button type="button" onClick={() => setModalVideo(null)} className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white">
+                                <X size={18} />
+                            </button>
                         </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                            <label style={labelSt}>Título</label>
-                            <input className="vc-inp" style={inputSt} placeholder="Ej: Introducción al módulo" value={formVideo.titulo} onChange={e => setFormVideo({ ...formVideo, titulo: e.target.value })} autoFocus />
+                        <div className="flex flex-col gap-1.5">
+                            <label className={eduLabel}>Título</label>
+                            <input className={eduInput} placeholder="Ej: Introducción al módulo" value={formVideo.titulo} onChange={(e) => setFormVideo({ ...formVideo, titulo: e.target.value })} autoFocus />
                         </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                            <label style={labelSt}>URL del video</label>
-                            <input className="vc-inp" style={inputSt} placeholder="https://youtube.com/watch?v=..." value={formVideo.url} onChange={e => setFormVideo({ ...formVideo, url: e.target.value })} />
+                        <div className="flex flex-col gap-1.5">
+                            <label className={eduLabel}>URL del video</label>
+                            <input className={eduInput} placeholder="https://youtube.com/watch?v=..." value={formVideo.url} onChange={(e) => setFormVideo({ ...formVideo, url: e.target.value })} />
                         </div>
-                        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                            <button className="vc-btn-out" onClick={() => setModalVideo(null)} style={btnOutline}>Cancelar</button>
-                            <button className="vc-btn-red" onClick={agregarVideo} style={btnRed}>Agregar</button>
+                        <div className="flex justify-end gap-2 pt-1">
+                            <button type="button" className={eduBtnOutline} onClick={() => setModalVideo(null)}>
+                                Cancelar
+                            </button>
+                            <button type="button" className={eduBtnPrimary} onClick={agregarVideo}>
+                                Agregar
+                            </button>
                         </div>
                     </Modal>
                 )}
@@ -336,17 +328,29 @@ export default function VerCurso({ id }: { id: number }) {
                 {/* Modal editar módulo */}
                 {modalEditModulo && (
                     <Modal onClose={() => setModalEditModulo(null)}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                            <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, fontFamily: "'Playfair Display', serif" }}>Editar módulo</h3>
-                            <button onClick={() => setModalEditModulo(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#706f6c" }}><X size={18} /></button>
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold text-white">Editar módulo</h3>
+                            <button type="button" onClick={() => setModalEditModulo(null)} className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white">
+                                <X size={18} />
+                            </button>
                         </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                            <label style={labelSt}>Nombre del módulo</label>
-                            <input className="vc-inp" style={inputSt} value={editTituloModulo} onChange={e => setEditTituloModulo(e.target.value)} autoFocus onKeyDown={e => e.key === "Enter" && confirmarEditarModulo()} />
+                        <div className="flex flex-col gap-1.5">
+                            <label className={eduLabel}>Nombre del módulo</label>
+                            <input
+                                className={eduInput}
+                                value={editTituloModulo}
+                                onChange={(e) => setEditTituloModulo(e.target.value)}
+                                autoFocus
+                                onKeyDown={(e) => e.key === "Enter" && confirmarEditarModulo()}
+                            />
                         </div>
-                        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                            <button className="vc-btn-out" onClick={() => setModalEditModulo(null)} style={btnOutline}>Cancelar</button>
-                            <button className="vc-btn-red" onClick={confirmarEditarModulo} style={btnRed}>Guardar</button>
+                        <div className="flex justify-end gap-2 pt-1">
+                            <button type="button" className={eduBtnOutline} onClick={() => setModalEditModulo(null)}>
+                                Cancelar
+                            </button>
+                            <button type="button" className={eduBtnPrimary} onClick={confirmarEditarModulo}>
+                                Guardar
+                            </button>
                         </div>
                     </Modal>
                 )}
@@ -354,51 +358,54 @@ export default function VerCurso({ id }: { id: number }) {
                 {/* Modal agregar PDF */}
                 {modalDocumento && (
                     <Modal onClose={() => { setModalDocumento(null); setFormDocumento({ titulo: "", archivo: null }); }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                            <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, fontFamily: "'Playfair Display', serif" }}>Subir documento PDF</h3>
-                            <button onClick={() => setModalDocumento(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#706f6c" }}><X size={18} /></button>
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold text-white">Subir documento PDF</h3>
+                            <button type="button" onClick={() => setModalDocumento(null)} className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white">
+                                <X size={18} />
+                            </button>
                         </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                            <label style={labelSt}>Título</label>
-                            <input className="vc-inp" style={inputSt} placeholder="Ej: Teoría VR" value={formDocumento.titulo} onChange={e => setFormDocumento({ ...formDocumento, titulo: e.target.value })} autoFocus />
+                        <div className="flex flex-col gap-1.5">
+                            <label className={eduLabel}>Título</label>
+                            <input className={eduInput} placeholder="Ej: Teoría VR" value={formDocumento.titulo} onChange={(e) => setFormDocumento({ ...formDocumento, titulo: e.target.value })} autoFocus />
                         </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                            <label style={labelSt}>Archivo PDF</label>
-                            <input type="file" accept=".pdf,application/pdf" style={{ ...inputSt, cursor: "pointer" }} onChange={e => setFormDocumento({ ...formDocumento, archivo: e.target.files?.[0] ?? null })} />
+                        <div className="flex flex-col gap-1.5">
+                            <label className={eduLabel}>Archivo PDF</label>
+                            <input type="file" accept=".pdf,application/pdf" className={`${eduInput} cursor-pointer file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-500/20 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-cyan-200`} onChange={(e) => setFormDocumento({ ...formDocumento, archivo: e.target.files?.[0] ?? null })} />
                         </div>
-                        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                            <button className="vc-btn-out" onClick={() => setModalDocumento(null)} style={btnOutline}>Cancelar</button>
-                            <button className="vc-btn-red" onClick={agregarDocumento} style={btnRed}>Subir</button>
+                        <div className="flex justify-end gap-2 pt-1">
+                            <button type="button" className={eduBtnOutline} onClick={() => setModalDocumento(null)}>
+                                Cancelar
+                            </button>
+                            <button type="button" className={eduBtnPrimary} onClick={agregarDocumento}>
+                                Subir
+                            </button>
                         </div>
                     </Modal>
                 )}
 
                 {/* ══ CABECERA DEL CURSO ══ */}
-                <section className="relative overflow-hidden border-b border-[#e3e3e0]/60 dark:border-[#2a2a26]/60">
+                <section className="relative overflow-hidden border-b border-white/10">
                     <EduHeroBlobs />
                     {curso.imagen && (
                         <>
-                            <div className="pointer-events-none absolute inset-0 dark:opacity-20">
+                            <div className="pointer-events-none absolute inset-0 opacity-30">
                                 <img
                                     src={`/storage/${curso.imagen}`}
                                     alt=""
                                     className="h-full w-full object-cover opacity-[0.08]"
                                 />
                             </div>
-                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#FDFDFC] via-[#FDFDFC]/90 to-transparent dark:from-[#0a0a0a] dark:via-[#0a0a0a]/88 dark:to-transparent" />
+                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/90 to-transparent" />
                         </>
                     )}
                     <div className="relative mx-auto max-w-7xl px-6 py-10 lg:py-12">
-                        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#f53003]/25 bg-[#f53003]/6 px-3 py-1 text-xs font-semibold text-[#f53003]">
+                        <div className={`${eduBadgeEyebrow} mb-3 px-3 py-1 text-xs`}>
                             <Monitor size={12} /> Aula VR
                         </div>
-                        <h1
-                            className="mb-3 max-w-3xl text-3xl font-black leading-tight tracking-tight text-[#1b1b18] dark:text-[#EDEDEC] lg:text-4xl"
-                            style={{ fontFamily: "'Playfair Display', serif" }}
-                        >
+                        <h1 className="mb-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight text-white lg:text-4xl">
                             {curso.titulo}
                         </h1>
-                        <p className="mb-5 max-w-2xl text-sm leading-relaxed text-[#706f6c] dark:text-[#A1A09A] lg:text-base">
+                        <p className="mb-5 max-w-2xl text-sm leading-relaxed text-slate-400 lg:text-base">
                             {curso.descripcion}
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -409,19 +416,28 @@ export default function VerCurso({ id }: { id: number }) {
                                     icon: null,
                                     label:
                                         miniJuegoLocalListo &&
-                                        curso.mini_juego &&
-                                        miniJuegoTieneProgresoLocal(curso.mini_juego)
+                                            curso.mini_juego &&
+                                            miniJuegoTieneProgresoLocal(curso.mini_juego)
                                             ? "Completado"
                                             : curso.estado,
                                     green: true,
                                 },
                             ].map((chip, i) => (
-                                <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: chip.green ? "#166534" : "#706f6c", background: chip.green ? "#f0fdf4" : "#f5f5f3", border: `1px solid ${chip.green ? "#bbf7d0" : "#e3e3e0"}`, padding: "4px 12px", borderRadius: 999 }}>
-                                    {chip.icon}{chip.label}
+                                <span
+                                    key={i}
+                                    className={cn(
+                                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium",
+                                        chip.green
+                                            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                                            : "border-white/10 bg-white/[0.05] text-slate-400",
+                                    )}
+                                >
+                                    {chip.icon}
+                                    {chip.label}
                                 </span>
                             ))}
                             {juegosDisponibles.length > 0 && (
-                                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: "#f53003", background: "rgba(245,48,3,.06)", border: "1px solid rgba(245,48,3,.2)", padding: "4px 12px", borderRadius: 999, fontWeight: 600 }}>
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/25 bg-violet-500/10 px-3 py-1 text-xs font-semibold text-violet-200">
                                     <Gamepad2 size={11} />
                                     {juegosDisponibles.length} mini {juegosDisponibles.length === 1 ? "juego" : "juegos"}
                                 </span>
@@ -452,8 +468,8 @@ export default function VerCurso({ id }: { id: number }) {
                                     )
                                 ) : (
                                     <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
-                                        <div style={{ width: 64, height: 64, borderRadius: 20, background: "rgba(245,48,3,.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                            <Play size={28} color="rgba(245,48,3,.3)" />
+                                        <div style={{ width: 64, height: 64, borderRadius: 20, background: "rgba(34,211,238,.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                            <Play size={28} color="rgba(34,211,238,.3)" />
                                         </div>
                                         <p style={{ color: "#706f6c", fontSize: 14, margin: 0 }}>Selecciona un video para comenzar</p>
                                     </div>
@@ -463,25 +479,25 @@ export default function VerCurso({ id }: { id: number }) {
                             {videoActivo && (
                                 <div style={{ padding: "16px 24px", borderBottom: "1px solid rgba(227,227,224,.6)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", background: "#fff" }}>
                                     <div style={{ minWidth: 0 }}>
-                                        <p style={{ margin: "0 0 3px", fontSize: 10, fontWeight: 700, color: "#f53003", textTransform: "uppercase", letterSpacing: ".08em" }}>Reproduciendo</p>
+                                        <p style={{ margin: "0 0 3px", fontSize: 10, fontWeight: 700, color: "#22d3ee", textTransform: "uppercase", letterSpacing: ".08em" }}>Reproduciendo</p>
                                         <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#1b1b18", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                                             {videoActivo.titulo}
                                         </h2>
                                     </div>
-                                    <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                                    <div className="flex shrink-0 gap-2">
                                         <button
-                                            className="vc-btn-out"
+                                            type="button"
+                                            className={cn(eduBtnOutline, "text-xs")}
                                             disabled={!anterior}
                                             onClick={() => anterior && irAVideo(anterior)}
-                                            style={{ ...btnOutline, opacity: anterior ? 1 : .35 }}
                                         >
                                             <SkipBack size={13} /> Anterior
                                         </button>
                                         <button
-                                            className="vc-btn-red"
+                                            type="button"
+                                            className={cn(eduBtnPrimary, "text-xs")}
                                             disabled={!siguiente}
                                             onClick={() => siguiente && irAVideo(siguiente)}
-                                            style={{ ...btnRed, opacity: siguiente ? 1 : .35 }}
                                         >
                                             Siguiente <SkipForward size={13} />
                                         </button>
@@ -544,11 +560,11 @@ export default function VerCurso({ id }: { id: number }) {
                                                                     <button
                                                                         className={`vc-video-btn${isActive ? " active" : ""}`}
                                                                         onClick={() => irAVideo(video)}
-                                                                        style={{ flex: 1, display: "flex", alignItems: "center", gap: 9, padding: "9px 14px", background: isActive ? "rgba(245,48,3,.06)" : "transparent", border: "none", cursor: "pointer", textAlign: "left", minWidth: 0, borderLeft: isActive ? "2px solid #f53003" : "2px solid transparent" }}
+                                                                        style={{ flex: 1, display: "flex", alignItems: "center", gap: 9, padding: "9px 14px", background: isActive ? "rgba(34,211,238,.06)" : "transparent", border: "none", cursor: "pointer", textAlign: "left", minWidth: 0, borderLeft: isActive ? "2px solid #22d3ee" : "2px solid transparent" }}
                                                                     >
-                                                                        <span style={{ fontSize: 10, color: isActive ? "#f53003" : "#a1a09a", minWidth: 16, flexShrink: 0, fontWeight: 600 }}>{idx + 1}</span>
-                                                                        <Play size={10} color={isActive ? "#f53003" : "#a1a09a"} style={{ flexShrink: 0 }} />
-                                                                        <span style={{ fontSize: 12, color: isActive ? "#f53003" : "#1b1b18", flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontWeight: isActive ? 600 : 400 }}>
+                                                                        <span style={{ fontSize: 10, color: isActive ? "#22d3ee" : "#a1a09a", minWidth: 16, flexShrink: 0, fontWeight: 600 }}>{idx + 1}</span>
+                                                                        <Play size={10} color={isActive ? "#22d3ee" : "#a1a09a"} style={{ flexShrink: 0 }} />
+                                                                        <span style={{ fontSize: 12, color: isActive ? "#22d3ee" : "#1b1b18", flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontWeight: isActive ? 600 : 400 }}>
                                                                             {video.titulo}
                                                                         </span>
                                                                     </button>
@@ -573,7 +589,7 @@ export default function VerCurso({ id }: { id: number }) {
                                                             )}
                                                             {modulo.documentos?.map(doc => (
                                                                 <li key={doc.id} style={{ display: "flex", alignItems: "center" }}>
-                                                                    <a href={`/storage/${doc.archivo}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, fontSize: 12, color: "#f53003", textDecoration: "none", padding: "5px 0", display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                                                                    <a href={`/storage/${doc.archivo}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, fontSize: 12, color: "#22d3ee", textDecoration: "none", padding: "5px 0", display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
                                                                         <FileText size={11} style={{ flexShrink: 0 }} />
                                                                         <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{doc.titulo}</span>
                                                                     </a>
@@ -595,19 +611,25 @@ export default function VerCurso({ id }: { id: number }) {
                                 {mostrarFormModulo ? (
                                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                                         <input
-                                            className="vc-inp"
-                                            style={inputSt}
+                                            className={eduInput}
                                             placeholder="Nombre del módulo..."
                                             value={nuevoModulo}
-                                            onChange={e => setNuevoModulo(e.target.value)}
-                                            onKeyDown={e => e.key === "Enter" && agregarModulo()}
+                                            onChange={(e) => setNuevoModulo(e.target.value)}
+                                            onKeyDown={(e) => e.key === "Enter" && agregarModulo()}
                                             autoFocus
                                         />
-                                        <div style={{ display: "flex", gap: 6 }}>
-                                            <button className="vc-btn-out" onClick={() => { setMostrarFormModulo(false); setNuevoModulo(""); }} style={{ ...btnOutline, width: 34, padding: 0, justifyContent: "center", flexShrink: 0 }}>
+                                        <div className="flex gap-2">
+                                            <button
+                                                type="button"
+                                                className={cn(eduBtnOutline, "h-9 w-9 shrink-0 !p-0")}
+                                                onClick={() => {
+                                                    setMostrarFormModulo(false);
+                                                    setNuevoModulo("");
+                                                }}
+                                            >
                                                 <X size={13} />
                                             </button>
-                                            <button className="vc-btn-red" onClick={agregarModulo} style={{ ...btnRed, flex: 1, justifyContent: "center" }}>
+                                            <button type="button" className={cn(eduBtnPrimary, "min-w-0 flex-1 justify-center text-xs")} onClick={agregarModulo}>
                                                 Crear módulo
                                             </button>
                                         </div>
@@ -631,203 +653,213 @@ export default function VerCurso({ id }: { id: number }) {
                     <section className="border-t border-[#e3e3e0]/60 bg-[#FDFDFC] px-6 py-12 dark:border-[#2a2a26]/60 dark:bg-[#0a0a0a]">
                         <div className="mx-auto max-w-7xl">
 
-                        {/* ── Encabezado de la sección ── */}
-                        <div style={{ marginBottom: 28 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                                <div style={{ width: 36, height: 36, borderRadius: 11, background: "rgba(245,48,3,.08)", border: "1px solid rgba(245,48,3,.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#f53003" }}>
-                                    <Gamepad2 size={17} />
-                                </div>
-                                <div>
-                                    <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: "#f53003", textTransform: "uppercase", letterSpacing: ".1em" }}>
-                                        Actividades interactivas
-                                    </p>
-                                    <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800, fontFamily: "'Playfair Display', serif", color: "#1b1b18" }}>
-                                        Mini Juegos
-                                    </h3>
-                                </div>
-                            </div>
-                            <div style={{ height: 1, background: "linear-gradient(to right, rgba(245,48,3,.2), transparent)", marginTop: 20 }} />
-                        </div>
-
-                        {/* ── Selector de juegos (tabs) ── */}
-                        <div style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
-                            {juegosDisponibles.map(key => {
-                                const info = MINI_JUEGOS_INFO[key];
-                                const isSelected = juegoSeleccionado === key;
-                                return (
-                                    <button
-                                        key={key}
-                                        className={isSelected ? "vc-game-tab-active" : "vc-game-tab"}
-                                        onClick={() => setJuegoSeleccionado(key)}
-                                        style={{
-                                            display: "inline-flex", alignItems: "center", gap: 8,
-                                            padding: "9px 18px", borderRadius: 12, cursor: "pointer",
-                                            fontFamily: "'Instrument Sans', sans-serif", fontWeight: 600,
-                                            fontSize: 13, transition: "all .18s",
-                                            background: isSelected ? "#f53003" : "#fff",
-                                            color: isSelected ? "#fff" : "#706f6c",
-                                            border: isSelected ? "1px solid #f53003" : "1px solid #d1d0cc",
-                                            boxShadow: isSelected ? "0 4px 14px rgba(245,48,3,.25)" : "none",
-                                        }}
-                                    >
-                                        {/* Ícono del juego */}
-                                        <span style={{ display: "flex", alignItems: "center" }}>{info.icon}</span>
-                                        {info.label}
-                                        {/* Badge de tipo */}
-                                        <span style={{
-                                            fontSize: 9, fontWeight: 700, letterSpacing: ".08em",
-                                            padding: "2px 7px", borderRadius: 999,
-                                            background: isSelected ? "rgba(255,255,255,.22)" : "rgba(245,48,3,.07)",
-                                            color: isSelected ? "#fff" : "#f53003",
-                                            border: isSelected ? "1px solid rgba(255,255,255,.3)" : "1px solid rgba(245,48,3,.2)",
-                                        }}>
-                                            {info.tag}
-                                        </span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        {/* ── Panel del juego seleccionado ── */}
-                        {juegoSeleccionado && MINI_JUEGOS_INFO[juegoSeleccionado] && (() => {
-                            const juego = MINI_JUEGOS_INFO[juegoSeleccionado];
-                            return (
-                                <div style={{ animation: "fadeInUp .25s ease" }}>
-                                    {/* Card contenedora */}
-                                    <div
-                                        ref={miniJuegoCardRef}
-                                        style={{
-                                            position: "relative",
-                                            borderRadius: 20, overflow: "hidden",
-                                            border: "1px solid rgba(227,227,224,.8)",
-                                            boxShadow: "0 8px 40px rgba(0,0,0,.07)",
-                                            background: "#1b1b18",
-                                        }}
-                                    >
-                                        {/* Barra superior del juego */}
-                                        <div style={{
-                                            display: "flex", alignItems: "center", justifyContent: "space-between",
-                                            padding: "12px 20px",
-                                            background: "rgba(255,255,255,.04)",
-                                            borderBottom: "1px solid rgba(255,255,255,.07)",
-                                        }}>
-                                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                                {/* Botones estilo macOS */}
-                                                <div style={{ display: "flex", gap: 6 }}>
-                                                    {["#ff5f56", "#ffbd2e", "#27c93f"].map((c, i) => (
-                                                        <div key={i} style={{ width: 12, height: 12, borderRadius: "50%", background: c, opacity: .7 }} />
-                                                    ))}
-                                                </div>
-                                                <span style={{ fontSize: 12, color: "rgba(255,255,255,.45)", fontWeight: 500 }}>
-                                                    {juego.label}
-                                                </span>
-                                            </div>
-                                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                                {minijuegoTienePantallaCompleta(juegoSeleccionado) && (
-                                                    <MinijuegoFullscreenToggleButton containerRef={miniJuegoCardRef} />
-                                                )}
-                                                <span style={{
-                                                    fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.4)",
-                                                    background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)",
-                                                    padding: "3px 10px", borderRadius: 999, letterSpacing: ".07em"
-                                                }}>
-                                                    {juego.tag}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {/* Contenido del juego */}
-                                        {juego.url ? (
-                                            <div style={{ padding: 24, background: "#14151c" }}>
-                                                <MiniJuegoProgreso
-                                                    key={juegoSeleccionado}
-                                                    cursoId={id}
-                                                    storageKey={juegoSeleccionado}
-                                                    onCompletado={() => setMiniJuegoLocalListo(true)}
-                                                    interaccionIframe
-                                                >
-                                                    <div style={{ position: "relative", width: "100%", paddingTop: "56.25%" }}>
-                                                        <iframe
-                                                            src={juego.url}
-                                                            title={juego.label}
-                                                            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none", display: "block" }}
-                                                            allow="fullscreen; autoplay; xr-spatial-tracking; gyroscope; accelerometer"
-                                                            loading="lazy"
-                                                        />
-                                                    </div>
-                                                </MiniJuegoProgreso>
-                                            </div>
-                                        ) : juegoSeleccionado === "pingpong" ? (
-                                            <div style={{ padding: 24, background: "#14151c" }}>
-                                                <MiniJuegoProgreso
-                                                    key={juegoSeleccionado}
-                                                    cursoId={id}
-                                                    storageKey="pingpong"
-                                                    onCompletado={() => setMiniJuegoLocalListo(true)}
-                                                    interaccionIframe
-                                                >
-                                                    <VRPingPong />
-                                                </MiniJuegoProgreso>
-                                            </div>
-                                        ) : juegoSeleccionado === "quiz_medico" ? (
-                                            <div style={{ padding: 24, background: "#14151c" }}>
-                                                <MiniJuegoProgreso
-                                                    key={juegoSeleccionado}
-                                                    cursoId={id}
-                                                    storageKey="quiz_medico"
-                                                    onCompletado={() => setMiniJuegoLocalListo(true)}
-                                                >
-                                                    <QuizMedico3D />
-                                                </MiniJuegoProgreso>
-                                            </div>
-                                        ) : juegoSeleccionado === "anatomia_humana" ? (
-                                            <div style={{ padding: 24, background: "#14151c" }}>
-                                                <AnatomiaHumana3D
-                                                    cursoId={id}
-                                                    onCompletado={() => setMiniJuegoLocalListo(true)}
-                                                />
-                                            </div>
-                                        ) : juegoSeleccionado === "computer_3d" ? (
-                                            <div style={{ padding: 24, background: "#14151c" }}>
-                                                <Computer3D
-                                                    cursoId={id}
-                                                    onCompletado={() => setMiniJuegoLocalListo(true)}
-                                                />
-                                            </div>
-                                        ) : juegoSeleccionado === "creative_box" ? (
-                                            <div style={{ padding: 24, background: "#0a0e14" }}>
-                                                <CreativeBox
-                                                    cursoId={id}
-                                                    onCompletado={() => {
-                                                        setMiniJuegoLocalListo(true);
-                                                        cargarCurso();
-                                                    }}
-                                                />
-                                            </div>
-                                        ) : null}
+                            {/* ── Encabezado de la sección ── */}
+                            <div style={{ marginBottom: 28 }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                                    <div style={{ width: 36, height: 36, borderRadius: 11, background: "rgba(34,211,238,.08)", border: "1px solid rgba(34,211,238,.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#22d3ee" }}>
+                                        <Gamepad2 size={17} />
+                                    </div>
+                                    <div>
+                                        <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: "#22d3ee", textTransform: "uppercase", letterSpacing: ".1em" }}>
+                                            Actividades interactivas
+                                        </p>
+                                        <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800, fontFamily: "'Playfair Display', serif", color: "#1b1b18" }}>
+                                            Mini Juegos
+                                        </h3>
                                     </div>
                                 </div>
-                            );
-                        })()}
-
-                        {/* Placeholder si ningún juego está seleccionado */}
-                        {!juegoSeleccionado && (
-                            <div style={{
-                                border: "1px dashed #d1d0cc", borderRadius: 20, padding: "48px 24px",
-                                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                                gap: 12, background: "#fafaf8", color: "#a1a09a", textAlign: "center",
-                            }}>
-                                <div style={{ width: 56, height: 56, borderRadius: 18, background: "rgba(245,48,3,.05)", border: "1px solid rgba(245,48,3,.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                    <Gamepad2 size={24} color="rgba(245,48,3,.3)" />
-                                </div>
-                                <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: "#706f6c" }}>
-                                    Selecciona un juego para comenzar
-                                </p>
-                                <p style={{ margin: 0, fontSize: 12, color: "#a1a09a" }}>
-                                    Haz clic en uno de los botones de arriba
-                                </p>
+                                <div style={{ height: 1, background: "linear-gradient(to right, rgba(34,211,238,.2), transparent)", marginTop: 20 }} />
                             </div>
-                        )}
+
+                            {/* ── Selector de juegos (tabs) ── */}
+                            <div style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
+                                {juegosDisponibles.map(key => {
+                                    const info = MINI_JUEGOS_INFO[key];
+                                    const isSelected = juegoSeleccionado === key;
+                                    return (
+                                        <button
+                                            key={key}
+                                            className={isSelected ? "vc-game-tab-active" : "vc-game-tab"}
+                                            onClick={() => setJuegoSeleccionado(key)}
+                                            style={{
+                                                display: "inline-flex", alignItems: "center", gap: 8,
+                                                padding: "9px 18px", borderRadius: 12, cursor: "pointer",
+                                                fontFamily: "'Instrument Sans', sans-serif", fontWeight: 600,
+                                                fontSize: 13, transition: "all .18s",
+                                                background: isSelected ? "#22d3ee" : "#fff",
+                                                color: isSelected ? "#fff" : "#706f6c",
+                                                border: isSelected ? "1px solid #22d3ee" : "1px solid #d1d0cc",
+                                                boxShadow: isSelected ? "0 4px 14px rgba(34,211,238,.25)" : "none",
+                                            }}
+                                        >
+                                            {/* Ícono del juego */}
+                                            <span style={{ display: "flex", alignItems: "center" }}>{info.icon}</span>
+                                            {info.label}
+                                            {/* Badge de tipo */}
+                                            <span style={{
+                                                fontSize: 9, fontWeight: 700, letterSpacing: ".08em",
+                                                padding: "2px 7px", borderRadius: 999,
+                                                background: isSelected ? "rgba(255,255,255,.22)" : "rgba(34,211,238,.07)",
+                                                color: isSelected ? "#fff" : "#22d3ee",
+                                                border: isSelected ? "1px solid rgba(255,255,255,.3)" : "1px solid rgba(34,211,238,.2)",
+                                            }}>
+                                                {info.tag}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* ── Panel del juego seleccionado ── */}
+                            {juegoSeleccionado && MINI_JUEGOS_INFO[juegoSeleccionado] && (() => {
+                                const juego = MINI_JUEGOS_INFO[juegoSeleccionado];
+                                return (
+                                    <div style={{ animation: "fadeInUp .25s ease" }}>
+                                        {/* Card contenedora */}
+                                        <div
+                                            ref={miniJuegoCardRef}
+                                            style={{
+                                                position: "relative",
+                                                borderRadius: 20, overflow: "hidden",
+                                                border: "1px solid rgba(227,227,224,.8)",
+                                                boxShadow: "0 8px 40px rgba(0,0,0,.07)",
+                                                background: "#1b1b18",
+                                            }}
+                                        >
+                                            {/* Barra superior del juego */}
+                                            <div style={{
+                                                display: "flex", alignItems: "center", justifyContent: "space-between",
+                                                padding: "12px 20px",
+                                                background: "rgba(255,255,255,.04)",
+                                                borderBottom: "1px solid rgba(255,255,255,.07)",
+                                            }}>
+                                                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                                    {/* Botones estilo macOS */}
+                                                    <div style={{ display: "flex", gap: 6 }}>
+                                                        {["#ff5f56", "#ffbd2e", "#27c93f"].map((c, i) => (
+                                                            <div key={i} style={{ width: 12, height: 12, borderRadius: "50%", background: c, opacity: .7 }} />
+                                                        ))}
+                                                    </div>
+                                                    <span style={{ fontSize: 12, color: "rgba(255,255,255,.45)", fontWeight: 500 }}>
+                                                        {juego.label}
+                                                    </span>
+                                                </div>
+                                                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                                    {minijuegoTienePantallaCompleta(juegoSeleccionado) && (
+                                                        <MinijuegoFullscreenToggleButton containerRef={miniJuegoCardRef} />
+                                                    )}
+                                                    <span style={{
+                                                        fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.4)",
+                                                        background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)",
+                                                        padding: "3px 10px", borderRadius: 999, letterSpacing: ".07em"
+                                                    }}>
+                                                        {juego.tag}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Contenido del juego */}
+                                            {juego.url ? (
+                                                <div style={{ padding: 24, background: "#14151c" }}>
+                                                    <MiniJuegoProgreso
+                                                        key={juegoSeleccionado}
+                                                        cursoId={id}
+                                                        storageKey={juegoSeleccionado}
+                                                        onCompletado={() => setMiniJuegoLocalListo(true)}
+                                                        interaccionIframe
+                                                    >
+                                                        <div style={{ position: "relative", width: "100%", paddingTop: "56.25%" }}>
+                                                            <iframe
+                                                                src={juego.url}
+                                                                title={juego.label}
+                                                                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none", display: "block" }}
+                                                                allow="fullscreen; autoplay; xr-spatial-tracking; gyroscope; accelerometer"
+                                                                loading="lazy"
+                                                            />
+                                                        </div>
+                                                    </MiniJuegoProgreso>
+                                                </div>
+                                            ) : juegoSeleccionado === "pingpong" ? (
+                                                <div style={{ padding: 24, background: "#14151c" }}>
+                                                    <MiniJuegoProgreso
+                                                        key={juegoSeleccionado}
+                                                        cursoId={id}
+                                                        storageKey="pingpong"
+                                                        onCompletado={() => setMiniJuegoLocalListo(true)}
+                                                        interaccionIframe
+                                                    >
+                                                        <VRPingPong />
+                                                    </MiniJuegoProgreso>
+                                                </div>
+                                            ) : juegoSeleccionado === "quiz_medico" ? (
+                                                <div style={{ padding: 24, background: "#14151c" }}>
+                                                    <MiniJuegoProgreso
+                                                        key={juegoSeleccionado}
+                                                        cursoId={id}
+                                                        storageKey="quiz_medico"
+                                                        onCompletado={() => setMiniJuegoLocalListo(true)}
+                                                    >
+                                                        <QuizMedico3D />
+                                                    </MiniJuegoProgreso>
+                                                </div>
+                                            ) : juegoSeleccionado === "anatomia_humana" ? (
+                                                <div style={{ padding: 24, background: "#14151c" }}>
+                                                    <AnatomiaHumana3D
+                                                        cursoId={id}
+                                                        onCompletado={() => setMiniJuegoLocalListo(true)}
+                                                    />
+                                                </div>
+                                            ) : juegoSeleccionado === "computer_3d" ? (
+                                                <div style={{ padding: 24, background: "#14151c" }}>
+                                                    <Computer3D
+                                                        cursoId={id}
+                                                        onCompletado={() => setMiniJuegoLocalListo(true)}
+                                                    />
+                                                </div>
+                                            ) : juegoSeleccionado === "games_fps" ? (
+                                                <div style={{ padding: 24, background: "#0a0e14" }}>
+                                                    <GamesFPS
+                                                        cursoId={id}
+                                                        onCompletado={() => {
+                                                            setMiniJuegoLocalListo(true);
+                                                            cargarCurso();
+                                                        }}
+                                                    />
+                                                </div>
+                                            ) : juegoSeleccionado === "creative_box" ? (
+                                                <div style={{ padding: 24, background: "#0a0e14" }}>
+                                                    <CreativeBox
+                                                        cursoId={id}
+                                                        onCompletado={() => {
+                                                            setMiniJuegoLocalListo(true);
+                                                            cargarCurso();
+                                                        }}
+                                                    />
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
+                            {/* Placeholder si ningún juego está seleccionado */}
+                            {!juegoSeleccionado && (
+                                <div style={{
+                                    border: "1px dashed #d1d0cc", borderRadius: 20, padding: "48px 24px",
+                                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                                    gap: 12, background: "#fafaf8", color: "#a1a09a", textAlign: "center",
+                                }}>
+                                    <div style={{ width: 56, height: 56, borderRadius: 18, background: "rgba(34,211,238,.05)", border: "1px solid rgba(34,211,238,.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                        <Gamepad2 size={24} color="rgba(34,211,238,.3)" />
+                                    </div>
+                                    <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: "#706f6c" }}>
+                                        Selecciona un juego para comenzar
+                                    </p>
+                                    <p style={{ margin: 0, fontSize: 12, color: "#a1a09a" }}>
+                                        Haz clic en uno de los botones de arriba
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </section>
                 )}
@@ -841,18 +873,12 @@ export default function VerCurso({ id }: { id: number }) {
 const hoverCss = `
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .vc-btn-red { transition: background .15s; }
-    .vc-btn-red:hover:not(:disabled) { background: #d42800 !important; }
-    .vc-btn-red:disabled { opacity: .35 !important; cursor: not-allowed !important; }
-    .vc-btn-out { transition: border-color .15s, color .15s, background .15s; }
-    .vc-btn-out:hover:not(:disabled) { border-color: rgba(245,48,3,.4) !important; color: #f53003 !important; background: rgba(245,48,3,.04) !important; }
-    .vc-btn-out:disabled { opacity: .35 !important; cursor: not-allowed !important; }
-    .vc-inp:focus { border-color: rgba(245,48,3,.5) !important; box-shadow: 0 0 0 3px rgba(245,48,3,.08); outline: none; }
-    .vc-mod-toggle:hover { background: rgba(245,48,3,.03) !important; }
-    .vc-icon-btn:hover { background: rgba(245,48,3,.06) !important; color: #f53003 !important; }
-    .vc-icon-btn-green:hover { background: rgba(22,163,74,.08) !important; }
-    .vc-video-btn:hover { background: rgba(245,48,3,.04) !important; }
-    .vc-del-btn:hover { color: #f53003 !important; background: rgba(245,48,3,.06) !important; }
-    .vc-add-mod:hover { border-color: rgba(245,48,3,.4) !important; color: #f53003 !important; }
-    .vc-game-tab:hover { border-color: rgba(245,48,3,.4) !important; color: #f53003 !important; background: rgba(245,48,3,.04) !important; }
+    .vc-mod-toggle:hover { background: rgba(34,211,238,.06) !important; }
+    .vc-icon-btn:hover { background: rgba(34,211,238,.1) !important; color: #67e8f9 !important; }
+    .vc-icon-btn-green:hover { background: rgba(22,163,74,.12) !important; }
+    .vc-video-btn:hover { background: rgba(34,211,238,.06) !important; }
+    .vc-video-btn.active { background: rgba(34,211,238,.1) !important; }
+    .vc-del-btn:hover { color: #f87171 !important; background: rgba(248,113,113,.08) !important; }
+    .vc-add-mod:hover { border-color: rgba(34,211,238,.45) !important; color: #22d3ee !important; }
+    .vc-game-tab:hover { border-color: rgba(34,211,238,.45) !important; color: #22d3ee !important; background: rgba(34,211,238,.08) !important; }
 `;

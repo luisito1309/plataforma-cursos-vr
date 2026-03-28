@@ -1,18 +1,47 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "@inertiajs/react";
 import axios from "axios";
-import EduPageShell, { EduHeroBlobs, eduNavOutline, eduNavPrimary } from "@/components/EduPageShell";
+import EduPageShell, { EduHeroBlobs, eduNavOutline } from "@/components/EduPageShell";
 import { isMinijuegoOk, miniJuegoTieneProgresoLocal } from "@/lib/minijuegoStorage";
 import QuizMedico3D from "@/components/QuizMedico3D";
 import AnatomiaHumana3D from "@/components/AnatomiaHumana3D";
 import Computer3D from "@/components/Computer3D";
 import MiniJuegoProgreso from "@/components/MiniJuegoProgreso";
 import CreativeBox from "@/components/CreativeBox";
+import GamesFPS from "@/components/GamesFPS";
 import { MinijuegoFullscreenToggleButton } from "@/components/MinijuegoFullscreenControls";
+import {
+    eduBadgeEyebrow,
+    eduBtnDanger,
+    eduBtnIcon,
+    eduBtnOutline,
+    eduBtnPrimary,
+    eduChipCategoria,
+    eduChipMiniJuego,
+    eduContentSection,
+    eduCourseCard,
+    eduCourseImageBg,
+    eduEyebrow,
+    eduFormSection,
+    eduHeadingHero,
+    eduHeroSection,
+    eduIconBoxSm,
+    eduInput,
+    eduLabel,
+    eduModalBackdrop,
+    eduModalCard,
+    eduNavPrimary,
+    eduSectionHeading,
+    eduSpinner,
+    eduStatCard,
+    eduTextarea,
+    eduTextMuted,
+} from "@/lib/edu-ui";
+import { cn } from "@/lib/utils";
 import {
     BookOpen, Home, Plus, X,
     Upload, Edit2, Trash2, UserPlus, Play, Monitor,
-    Gamepad2, Glasses, Cpu, Zap, ScanLine, Box,
+    Gamepad2, Glasses, Cpu, Zap, ScanLine, Box, Crosshair,
 } from "lucide-react";
 
 // ─── Catálogo de mini juegos (escalable) ─────────────────────────────────────
@@ -27,6 +56,7 @@ const MINI_JUEGOS: MiniJuegoOption[] = [
     { value: "konterball", label: "Konterball (VR web)", icon: <Glasses size={14} />, tag: "VR" },
     { value: "computer_3d", label: "Computer 3D", icon: <Cpu size={14} />, tag: "3D" },
     { value: "creative_box", label: "Creative Box", icon: <Box size={14} />, tag: "VOX" },
+    { value: "games_fps", label: "Games FPS", icon: <Crosshair size={14} />, tag: "FPS" },
     // Futuros juegos — descomenta para activar:
     // { value: "vr_escape",   label: "Escape Room VR",     icon: <Glasses  size={14} />, tag: "VR"   },
     // { value: "sim_fisica",  label: "Simulación Física",  icon: <Cpu      size={14} />, tag: "SIM"  },
@@ -53,7 +83,7 @@ function miniJuegosPorCategoria(cat: Categoria): MiniJuegoOption[] {
         case "tecnologia":
             return pick(["", "computer_3d"]);
         case "creativo":
-            return pick(["creative_box"]);
+            return pick(["creative_box", "games_fps"]);
         default:
             return [];
     }
@@ -69,36 +99,6 @@ interface Curso {
     mini_juego?: string | null;
     categoria?: string | null;
 }
-
-// ─── Tokens de estilo ────────────────────────────────────────────────────────
-const btnRed: React.CSSProperties = {
-    background: "#f53003", color: "#fff", border: "none",
-    borderRadius: "10px", padding: "0 18px", height: "36px",
-    fontSize: "13px", fontFamily: "'Instrument Sans', sans-serif",
-    fontWeight: 600, cursor: "pointer", display: "inline-flex",
-    alignItems: "center", gap: "7px",
-};
-
-const btnOutline: React.CSSProperties = {
-    background: "#fff", color: "#706f6c",
-    border: "1px solid #d1d0cc", borderRadius: "10px",
-    padding: "0 16px", height: "36px", fontSize: "13px",
-    fontFamily: "'Instrument Sans', sans-serif",
-    fontWeight: 500, cursor: "pointer", display: "inline-flex",
-    alignItems: "center", gap: "7px",
-};
-
-const inputSt: React.CSSProperties = {
-    background: "#FDFDFC", border: "1px solid #d1d0cc",
-    borderRadius: "10px", padding: "10px 14px", color: "#1b1b18",
-    fontSize: "14px", fontFamily: "'Instrument Sans', sans-serif",
-    width: "100%", outline: "none",
-};
-
-const labelSt: React.CSSProperties = {
-    fontSize: "11px", fontWeight: 600, color: "#706f6c",
-    textTransform: "uppercase", letterSpacing: ".07em",
-};
 
 /** Vista previa del formulario con control de pantalla completa (Medicina / Tecnología / Creativo). */
 function PreviaMinijuegoConFullscreen({
@@ -130,14 +130,7 @@ function PreviaMinijuegoConFullscreen({
                     flexWrap: "wrap",
                 }}
             >
-                <p
-                    style={{
-                        ...labelSt,
-                        margin: 0,
-                        color: tituloColor ?? "#1b1b18",
-                        letterSpacing: ".04em",
-                    }}
-                >
+                <p className={cn(eduLabel, "mb-0")} style={tituloColor ? { color: tituloColor } : undefined}>
                     {titulo}
                 </p>
                 <MinijuegoFullscreenToggleButton containerRef={ref} buttonStyle={temaBtn} />
@@ -235,19 +228,6 @@ export default function Cursos() {
 
     return (
         <>
-            <style>{`
-                .c-card { transition: transform .2s, border-color .2s, box-shadow .2s; }
-                .c-card:hover {
-                    transform: translateY(-4px);
-                    border-color: rgba(245, 48, 3, 0.35) !important;
-                    box-shadow: 0 20px 40px rgba(245, 48, 3, 0.08) !important;
-                }
-                .c-btn-red:hover { background: #d42800 !important; }
-                .c-btn-out:hover { border-color: rgba(245,48,3,.4) !important; color: #f53003 !important; background: rgba(245,48,3,.04) !important; }
-                .c-del:hover { background: rgba(245,48,3,.12) !important; color: #d42800 !important; }
-                .c-inp:focus { border-color: rgba(245,48,3,.5) !important; box-shadow: 0 0 0 3px rgba(245,48,3,.08); }
-            `}</style>
-
             <EduPageShell
                 title="Cursos — EduPlatform"
                 navRight={
@@ -258,7 +238,7 @@ export default function Cursos() {
                         <Link href="/mis-cursos" className={eduNavOutline}>
                             Mis cursos
                         </Link>
-                        <button type="button" className={eduNavPrimary} onClick={() => setMostrarForm(!mostrarForm)}>
+                        <button type="button" className={eduBtnPrimary} onClick={() => setMostrarForm(!mostrarForm)}>
                             {mostrarForm ? (
                                 <>
                                     <X size={14} /> Cerrar
@@ -275,58 +255,55 @@ export default function Cursos() {
 
                 {/* ══ MODAL EDITAR ══ */}
                 {modalEditar && (
-                    <div
-                        onClick={() => setModalEditar(null)}
-                        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}
-                    >
-                        <div onClick={e => e.stopPropagation()} className="flex w-full max-w-[480px] flex-col gap-4 rounded-[20px] border border-[#e3e3e0] bg-white p-8 shadow-2xl dark:border-[#2a2a26] dark:bg-[#111110]" style={{ boxShadow: "0 24px 60px rgba(0,0,0,.12)" }}>
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700, fontFamily: "'Playfair Display', serif" }}>Editar curso</h3>
-                                <button onClick={() => setModalEditar(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#706f6c" }}><X size={18} /></button>
+                    <div className={eduModalBackdrop} onClick={() => setModalEditar(null)}>
+                        <div onClick={(e) => e.stopPropagation()} className={eduModalCard}>
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-lg font-semibold text-white">Editar curso</h3>
+                                <button
+                                    type="button"
+                                    onClick={() => setModalEditar(null)}
+                                    className="rounded-lg p-1 text-slate-400 transition hover:bg-white/10 hover:text-white"
+                                >
+                                    <X size={18} />
+                                </button>
                             </div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                                <label style={labelSt}>Título</label>
-                                <input className="c-inp" style={inputSt} value={editTitulo} onChange={e => setEditTitulo(e.target.value)} autoFocus />
+                            <div className="flex flex-col gap-1.5">
+                                <label className={eduLabel}>Título</label>
+                                <input className={eduInput} value={editTitulo} onChange={(e) => setEditTitulo(e.target.value)} autoFocus />
                             </div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                                <label style={labelSt}>Descripción</label>
-                                <textarea className="c-inp" style={{ ...inputSt, resize: "vertical", minHeight: "100px" }} value={editDescripcion} onChange={e => setEditDescripcion(e.target.value)} />
+                            <div className="flex flex-col gap-1.5">
+                                <label className={eduLabel}>Descripción</label>
+                                <textarea className={eduTextarea} style={{ minHeight: "100px" }} value={editDescripcion} onChange={(e) => setEditDescripcion(e.target.value)} />
                             </div>
-                            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
-                                <button className="c-btn-out" onClick={() => setModalEditar(null)} style={btnOutline}>Cancelar</button>
-                                <button className="c-btn-red" onClick={confirmarEditar} style={btnRed}>Guardar cambios</button>
+                            <div className="flex justify-end gap-3 pt-2">
+                                <button type="button" className={eduBtnOutline} onClick={() => setModalEditar(null)}>
+                                    Cancelar
+                                </button>
+                                <button type="button" className={eduBtnPrimary} onClick={confirmarEditar}>
+                                    Guardar cambios
+                                </button>
                             </div>
                         </div>
                     </div>
                 )}
 
                 {/* ══ HERO ══ */}
-                <section className="relative overflow-hidden border-b border-[#e3e3e0]/60 dark:border-[#2a2a26]/60">
+                <section className={eduHeroSection}>
                     <EduHeroBlobs />
                     <div className="relative mx-auto flex max-w-6xl flex-wrap items-end justify-between gap-6 px-6 pb-10 pt-14 lg:pt-16">
                         <div className="max-w-xl">
-                            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#f53003]/25 bg-[#f53003]/6 px-4 py-1.5 text-sm font-medium text-[#f53003]">
+                            <div className={eduBadgeEyebrow}>
                                 <Monitor className="h-3.5 w-3.5" /> Plataforma VR
                             </div>
-                            <h1
-                                className="mb-3 text-4xl font-black leading-[1.1] tracking-tight text-[#1b1b18] dark:text-[#EDEDEC] lg:text-5xl"
-                                style={{ fontFamily: "'Playfair Display', serif" }}
-                            >
-                                Tus cursos
-                            </h1>
-                            <p className="text-lg leading-relaxed text-[#706f6c] dark:text-[#A1A09A]">
-                                Explora, crea y gestiona experiencias de realidad virtual como en el inicio.
-                            </p>
+                            <h1 className={eduHeadingHero}>Tus cursos</h1>
+                            <p className={eduTextMuted}>Explora, crea y gestiona experiencias de realidad virtual como en el inicio.</p>
                         </div>
-                        <div className="flex items-center gap-3 rounded-2xl border border-[#e3e3e0] bg-white px-5 py-4 shadow-sm dark:border-[#2a2a26] dark:bg-[#111110]">
-                            <BookOpen className="h-5 w-5 text-[#f53003]" />
-                            <span className="text-sm text-[#706f6c] dark:text-[#A1A09A]">
-                                <strong
-                                    className="text-2xl font-black text-[#1b1b18] dark:text-[#EDEDEC]"
-                                    style={{ fontFamily: "'Playfair Display', serif" }}
-                                >
-                                    {cursos.length}
-                                </strong>
+                        <div className={eduStatCard}>
+                            <div className={eduIconBoxSm}>
+                                <BookOpen className="h-5 w-5" strokeWidth={1.75} />
+                            </div>
+                            <span className="text-sm text-slate-400">
+                                <strong className="text-2xl font-semibold text-white">{cursos.length}</strong>
                                 <br />
                                 cursos en catálogo
                             </span>
@@ -336,12 +313,12 @@ export default function Cursos() {
 
                 {/* ══ FORM CREAR ══ */}
                 {mostrarForm && (
-                    <div className="border-b border-[#e3e3e0]/60 bg-white dark:border-[#2a2a26]/60 dark:bg-[#0d0d0c]">
+                    <div className={eduFormSection}>
                         <div className="mx-auto max-w-6xl px-6 py-8">
-                            <h3 style={{ margin: "0 0 20px", fontSize: 16, fontWeight: 700, fontFamily: "'Playfair Display', serif" }}>Crear nuevo curso</h3>
-                            <div style={{ marginBottom: 20, display: "flex", flexDirection: "column", gap: 8 }}>
-                                <label style={labelSt}>Categoría</label>
-                                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                            <h3 className="mb-5 text-base font-semibold text-white">Crear nuevo curso</h3>
+                            <div className="mb-5 flex flex-col gap-2">
+                                <label className={eduLabel}>Categoría</label>
+                                <div className="flex flex-wrap gap-2.5">
                                     {(["play", "medicina", "tecnologia", "creativo"] as Categoria[]).map((c) => {
                                         const activa = categoria === c;
                                         return (
@@ -349,15 +326,12 @@ export default function Cursos() {
                                                 key={c}
                                                 type="button"
                                                 onClick={() => setCategoria(c)}
-                                                className={activa ? "c-btn-red" : "c-btn-out"}
-                                                style={{
-                                                    ...(activa ? btnRed : btnOutline),
-                                                    borderRadius: 10,
-                                                    padding: "0 18px",
-                                                    height: 38,
-                                                    fontWeight: 600,
-                                                    fontSize: 13,
-                                                }}
+                                                className={cn(
+                                                    "rounded-xl px-4 py-2 text-sm font-semibold transition",
+                                                    activa
+                                                        ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 shadow-md shadow-cyan-500/25"
+                                                        : "border border-white/15 bg-white/5 text-slate-300 hover:border-cyan-500/35 hover:bg-white/10",
+                                                )}
                                             >
                                                 {CATEGORIA_LABELS[c]}
                                             </button>
@@ -365,52 +339,53 @@ export default function Cursos() {
                                     })}
                                 </div>
                             </div>
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 20 }}>
-                                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                                    <label style={labelSt}>Título del curso</label>
-                                    <input className="c-inp" style={inputSt} placeholder="Ej: Introducción a VR con Unity" value={titulo} onChange={e => setTitulo(e.target.value)} autoFocus />
+                            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+                                <div className="flex flex-col gap-1.5">
+                                    <label className={eduLabel}>Título del curso</label>
+                                    <input className={eduInput} placeholder="Ej: Introducción a VR con Unity" value={titulo} onChange={(e) => setTitulo(e.target.value)} autoFocus />
                                 </div>
-                                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                                    <label style={labelSt}>Descripción</label>
-                                    <textarea className="c-inp" style={{ ...inputSt, resize: "vertical", minHeight: 80 }} placeholder="Describe el contenido del curso..." value={descripcion} onChange={e => setDescripcion(e.target.value)} />
+                                <div className="flex flex-col gap-1.5">
+                                    <label className={eduLabel}>Descripción</label>
+                                    <textarea className={eduTextarea} style={{ minHeight: 80 }} placeholder="Describe el contenido del curso..." value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
                                 </div>
-                                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                                    <label style={labelSt}>Imagen del curso</label>
-                                    <label style={{ display: "flex", alignItems: "center", gap: 8, background: "#FDFDFC", border: "1px dashed #d1d0cc", borderRadius: 10, padding: "12px 14px", color: "#706f6c", fontSize: 13, cursor: "pointer" }}>
-                                        <Upload size={14} />
+                                <div className="flex flex-col gap-1.5">
+                                    <label className={eduLabel}>Imagen del curso</label>
+                                    <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-white/20 bg-white/[0.03] px-3.5 py-3 text-sm text-slate-400 transition hover:border-cyan-500/35">
+                                        <Upload size={14} className="text-cyan-400/80" />
                                         {imagen ? imagen.name : "Seleccionar imagen"}
-                                        <input id="imagenInput" type="file" accept="image/*" style={{ display: "none" }} onChange={e => setImagen(e.target.files?.[0] ?? null)} />
+                                        <input id="imagenInput" type="file" accept="image/*" className="hidden" onChange={(e) => setImagen(e.target.files?.[0] ?? null)} />
                                     </label>
                                 </div>
 
-                                {/* ── Mini Juego selector ── */}
-                                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                                    <label style={labelSt}>Mini Juego</label>
-                                    <div style={{ position: "relative" }}>
-                                        <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: miniJuego ? "#f53003" : "#a1a09a", pointerEvents: "none", display: "flex", alignItems: "center" }}>
+                                <div className="flex flex-col gap-1.5">
+                                    <label className={eduLabel}>Mini Juego</label>
+                                    <div className="relative">
+                                        <div className="pointer-events-none absolute left-3 top-1/2 flex -translate-y-1/2 items-center text-cyan-400/90">
                                             {getJuego(miniJuego)?.icon ?? <Gamepad2 size={14} />}
                                         </div>
                                         <select
-                                            className="c-inp"
+                                            className={cn(eduInput, "cursor-pointer appearance-none pl-10")}
                                             value={miniJuego}
-                                            onChange={e => setMiniJuego(e.target.value)}
-                                            style={{ ...inputSt, paddingLeft: 36, appearance: "none", cursor: "pointer", color: miniJuego ? "#1b1b18" : "#706f6c" }}
+                                            onChange={(e) => setMiniJuego(e.target.value)}
                                         >
-                                            {miniJuegosPorCategoria(categoria).map(juego => (
+                                            {miniJuegosPorCategoria(categoria).map((juego) => (
                                                 <option key={juego.value} value={juego.value}>
-                                                    {juego.label}{juego.tag !== "—" ? ` [${juego.tag}]` : ""}
+                                                    {juego.label}
+                                                    {juego.tag !== "—" ? ` [${juego.tag}]` : ""}
                                                 </option>
                                             ))}
                                         </select>
-                                        <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#a1a09a" }}>
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
+                                        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <polyline points="6 9 12 15 18 9" />
+                                            </svg>
                                         </div>
                                     </div>
                                     {miniJuego && (
-                                        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "#f53003", fontWeight: 600 }}>
+                                        <div className="flex items-center gap-2 text-xs font-semibold text-cyan-300">
                                             {getJuego(miniJuego)?.icon}
                                             <span>{getJuego(miniJuego)?.label}</span>
-                                            <span style={{ background: "rgba(245,48,3,.1)", borderRadius: 999, padding: "1px 7px", fontSize: 10 }}>
+                                            <span className="rounded-full bg-cyan-500/15 px-2 py-0.5 text-[10px] text-cyan-200">
                                                 {getJuego(miniJuego)?.tag}
                                             </span>
                                         </div>
@@ -424,9 +399,9 @@ export default function Cursos() {
                                     wrapStyle={{
                                         marginTop: 24,
                                         padding: "24px",
-                                        background: "#fafaf8",
+                                        background: "rgb(15 23 42 / 0.75)",
                                         borderRadius: 16,
-                                        border: "1px solid #e3e3e0",
+                                        border: "1px solid rgba(255,255,255,.1)",
                                     }}
                                 >
                                     <div style={{ maxWidth: 720 }}>
@@ -443,9 +418,9 @@ export default function Cursos() {
                                     wrapStyle={{
                                         marginTop: 24,
                                         padding: "24px",
-                                        background: "#fafaf8",
+                                        background: "rgb(15 23 42 / 0.75)",
                                         borderRadius: 16,
-                                        border: "1px solid #e3e3e0",
+                                        border: "1px solid rgba(255,255,255,.1)",
                                     }}
                                 >
                                     <div style={{ maxWidth: 900 }}>
@@ -459,21 +434,12 @@ export default function Cursos() {
                                     style={{
                                         marginTop: 24,
                                         padding: "24px",
-                                        background: "#fafaf8",
+                                        background: "rgb(15 23 42 / 0.75)",
                                         borderRadius: 16,
-                                        border: "1px solid #e3e3e0",
+                                        border: "1px solid rgba(255,255,255,.1)",
                                     }}
                                 >
-                                    <p
-                                        style={{
-                                            ...labelSt,
-                                            marginBottom: 12,
-                                            color: "#1b1b18",
-                                            letterSpacing: ".04em",
-                                        }}
-                                    >
-                                        Vista previa — Konterball
-                                    </p>
+                                    <p className={cn(eduLabel, "mb-3 text-slate-200")}>Vista previa — Konterball</p>
                                     <MiniJuegoProgreso cursoId={0} storageKey="konterball" interaccionIframe>
                                         <iframe
                                             src="https://konterball.com/"
@@ -489,8 +455,8 @@ export default function Cursos() {
                                             loading="lazy"
                                         />
                                     </MiniJuegoProgreso>
-                                    <p style={{ margin: "10px 0 0", fontSize: 12, color: "#706f6c" }}>
-                                        <a href="https://konterball.com/" target="_blank" rel="noopener noreferrer" style={{ color: "#f53003" }}>
+                                    <p className="mt-2.5 text-xs text-slate-500">
+                                        <a href="https://konterball.com/" target="_blank" rel="noopener noreferrer" className="font-medium text-cyan-400 hover:text-cyan-300">
                                             Abrir Konterball en pestaña nueva
                                         </a>
                                     </p>
@@ -503,9 +469,9 @@ export default function Cursos() {
                                     wrapStyle={{
                                         marginTop: 24,
                                         padding: "24px",
-                                        background: "#fafaf8",
+                                        background: "rgb(15 23 42 / 0.75)",
                                         borderRadius: 16,
-                                        border: "1px solid #e3e3e0",
+                                        border: "1px solid rgba(255,255,255,.1)",
                                     }}
                                 >
                                     <div style={{ maxWidth: 900 }}>
@@ -524,41 +490,55 @@ export default function Cursos() {
                                         padding: "24px",
                                         background: "#0f1118",
                                         borderRadius: 16,
-                                        border: "1px solid #e3e3e0",
+                                        border: "1px solid rgba(255,255,255,.12)",
                                     }}
                                 >
                                     <CreativeBox preview cursoId={0} />
                                 </PreviaMinijuegoConFullscreen>
                             )}
 
-                            <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
-                                <button className="c-btn-red" onClick={crearCurso} style={btnRed}><Plus size={14} /> Crear Curso</button>
+                            {miniJuego === "games_fps" && (
+                                <PreviaMinijuegoConFullscreen
+                                    titulo="Vista previa — Games FPS"
+                                    wrapStyle={{
+                                        marginTop: 24,
+                                        padding: "12px",
+                                        background: "rgb(15 23 42 / 0.75)",
+                                        borderRadius: 16,
+                                        border: "1px solid rgba(255,255,255,.1)",
+                                    }}
+                                >
+                                    <div className="h-[220px] min-h-[200px] w-full max-w-3xl">
+                                        <GamesFPS preview cursoId={0} />
+                                    </div>
+                                </PreviaMinijuegoConFullscreen>
+                            )}
+
+                            <div className="mt-5 flex justify-end">
+                                <button type="button" className={eduBtnPrimary} onClick={crearCurso}>
+                                    <Plus size={14} /> Crear curso
+                                </button>
                             </div>
                         </div>
                     </div>
                 )}
 
                 {/* ══ GRID ══ */}
-                <section className="border-t border-[#e3e3e0]/60 bg-white py-12 dark:border-[#2a2a26]/60 dark:bg-[#0d0d0c]">
+                <section className={eduContentSection}>
                     <main className="mx-auto max-w-6xl px-6 pb-16">
                         <div className="mb-10">
-                            <p className="mb-1.5 text-xs font-semibold uppercase tracking-widest text-[#f53003]">
-                                Catálogo
-                            </p>
-                            <h2
-                                className="text-3xl font-black tracking-tight text-[#1b1b18] dark:text-[#EDEDEC] lg:text-4xl"
-                                style={{ fontFamily: "'Playfair Display', serif" }}
-                            >
-                                Todos los cursos
-                            </h2>
+                            <p className={eduEyebrow}>Catálogo</p>
+                            <h2 className={eduSectionHeading}>Todos los cursos</h2>
                         </div>
                     {cursos.length === 0 ? (
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "100px 0", gap: 16, textAlign: "center" }}>
-                            <div style={{ width: 64, height: 64, borderRadius: 20, background: "rgba(245,48,3,.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <BookOpen size={28} color="rgba(245,48,3,.3)" />
+                        <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
+                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500/20 to-violet-600/15">
+                                <BookOpen className="h-8 w-8 text-cyan-400/50" strokeWidth={1.25} />
                             </div>
-                            <p style={{ color: "#706f6c", fontSize: 15, margin: 0 }}>No hay cursos aún. ¡Crea el primero!</p>
-                            <button className="c-btn-red" onClick={() => setMostrarForm(true)} style={btnRed}><Plus size={14} /> Nuevo Curso</button>
+                            <p className="text-sm text-slate-400">No hay cursos aún. ¡Crea el primero!</p>
+                            <button type="button" className={eduBtnPrimary} onClick={() => setMostrarForm(true)}>
+                                <Plus size={14} /> Nuevo curso
+                            </button>
                         </div>
                     ) : (
                         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -567,68 +547,67 @@ export default function Cursos() {
                                 const catLabel = etiquetaCategoria(curso.categoria);
                                 const estadoMostrar = etiquetaEstadoCurso(curso);
                                 return (
-                                    <article
-                                        key={`${curso.id}-${curso.titulo}`}
-                                        className="c-card group flex flex-col overflow-hidden rounded-2xl border border-[#e3e3e0] bg-[#FDFDFC] dark:border-[#2a2a26] dark:bg-[#111110]"
-                                        style={{ boxShadow: "0 1px 0 rgba(0,0,0,.04)" }}
-                                    >
-
-                                        {/* Imagen */}
-                                        <div className="relative h-44 overflow-hidden bg-gradient-to-br from-[#fff2f2] to-[#fef9ee] dark:from-[#1D0002] dark:to-[#161200]">
-                                            {curso.imagen
-                                                ? <img src={`/storage/${curso.imagen}`} alt={curso.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                                                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}><BookOpen size={48} color="rgba(245,48,3,.12)" /></div>
-                                            }
-                                            <span style={{ position: "absolute", right: 12, bottom: 4, fontSize: 52, fontWeight: 900, fontFamily: "'Playfair Display', serif", color: "rgba(245,48,3,.07)", lineHeight: 1, userSelect: "none" }}>
+                                    <article key={`${curso.id}-${curso.titulo}`} className={eduCourseCard}>
+                                        <div className={eduCourseImageBg}>
+                                            {curso.imagen ? (
+                                                <img src={`/storage/${curso.imagen}`} alt={curso.titulo} className="h-full w-full object-cover" />
+                                            ) : (
+                                                <div className="flex h-full items-center justify-center">
+                                                    <BookOpen className="h-16 w-16 text-cyan-500/15" strokeWidth={1} />
+                                                </div>
+                                            )}
+                                            <span className="pointer-events-none absolute bottom-1 right-3 select-none font-mono text-5xl font-light text-cyan-500/15">
                                                 {String(i + 1).padStart(2, "0")}
                                             </span>
                                             {estadoMostrar && (
-                                                <span style={{ position: "absolute", top: 10, right: 10, background: "rgba(10,31,22,.9)", color: "#4caf7d", fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 999, backdropFilter: "blur(4px)" }}>
+                                                <span className="absolute right-3 top-3 rounded-full border border-emerald-500/30 bg-emerald-950/85 px-2.5 py-1 text-[10px] font-bold text-emerald-300 backdrop-blur-sm">
                                                     {estadoMostrar}
                                                 </span>
                                             )}
-                                            {/* Badge mini juego sobre la imagen */}
                                             {juego && juego.value !== "" && (
-                                                <span style={{ position: "absolute", top: 10, left: 10, display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(245,48,3,.9)", color: "#fff", fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 999, backdropFilter: "blur(4px)" }}>
+                                                <span className={cn(eduChipMiniJuego, "absolute left-3 top-3 border-cyan-400/40 bg-cyan-500/90 text-[10px] text-white")}>
                                                     {juego.icon} {juego.tag}
                                                 </span>
                                             )}
                                         </div>
 
-                                        {/* Body */}
-                                        <div style={{ padding: "20px 20px 20px", flex: 1, display: "flex", flexDirection: "column" }}>
-                                            <h2 style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 600, lineHeight: 1.3, color: "#1b1b18" }}>{curso.titulo}</h2>
-                                            {catLabel && (
-                                                <span style={{ display: "inline-flex", marginBottom: 10, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "#0c4a6e", background: "#e0f2fe", border: "1px solid #7dd3fc", borderRadius: 999, padding: "3px 10px", alignSelf: "flex-start" }}>
-                                                    {catLabel}
-                                                </span>
-                                            )}
-                                            <p style={{ margin: "0 0 18px", fontSize: 13, color: "#706f6c", lineHeight: 1.6, flex: 1, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                                        <div className="flex flex-1 flex-col p-5">
+                                            <h2 className="mb-1.5 text-[15px] font-semibold leading-snug text-white">{curso.titulo}</h2>
+                                            {catLabel && <span className={cn(eduChipCategoria, "mb-2.5 self-start")}>{catLabel}</span>}
+                                            <p className="mb-4 line-clamp-3 flex-1 text-sm leading-relaxed text-slate-400">
                                                 {curso.descripcion}
                                             </p>
 
-                                            {/* Chip del juego debajo de la descripción */}
                                             {juego && juego.value !== "" && (
-                                                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 14, fontSize: 11, color: "#f53003", fontWeight: 600, background: "rgba(245,48,3,.06)", border: "1px solid rgba(245,48,3,.15)", borderRadius: 999, padding: "3px 10px", alignSelf: "flex-start" }}>
+                                                <div className={cn(eduChipMiniJuego, "mb-3.5 self-start font-medium")}>
                                                     {juego.icon} {juego.label}
                                                 </div>
                                             )}
 
-                                            {/* Acciones */}
-                                            <div style={{ borderTop: "1px solid rgba(227,227,224,.6)", paddingTop: 14, display: "flex", gap: 7, alignItems: "center" }}>
-                                                <a href={`/curso/${curso.id}`} style={{ textDecoration: "none", flex: 1 }}>
-                                                    <button className="c-btn-red" style={{ ...btnRed, width: "100%", justifyContent: "center" }}>
-                                                        <Play size={12} /> Ver Curso
-                                                    </button>
+                                            <div className="mt-auto flex items-center gap-2 border-t border-white/10 pt-3.5">
+                                                <a
+                                                    href={`/curso/${curso.id}`}
+                                                    className={cn(eduBtnPrimary, "min-w-0 flex-1 justify-center text-xs")}
+                                                >
+                                                    <Play className="h-3.5 w-3.5" /> Ver curso
                                                 </a>
-                                                <button className="c-btn-out" onClick={() => inscribirse(curso.id)} title="Inscribirse" style={{ ...btnOutline, width: 36, padding: 0, justifyContent: "center" }}>
-                                                    <UserPlus size={13} />
+                                                <button type="button" className={eduBtnIcon} onClick={() => inscribirse(curso.id)} title="Inscribirse">
+                                                    <UserPlus className="h-3.5 w-3.5" />
                                                 </button>
-                                                <button className="c-btn-out" onClick={() => { setModalEditar(curso); setEditTitulo(curso.titulo); setEditDescripcion(curso.descripcion); }} title="Editar" style={{ ...btnOutline, width: 36, padding: 0, justifyContent: "center" }}>
-                                                    <Edit2 size={13} />
+                                                <button
+                                                    type="button"
+                                                    className={eduBtnIcon}
+                                                    onClick={() => {
+                                                        setModalEditar(curso);
+                                                        setEditTitulo(curso.titulo);
+                                                        setEditDescripcion(curso.descripcion);
+                                                    }}
+                                                    title="Editar"
+                                                >
+                                                    <Edit2 className="h-3.5 w-3.5" />
                                                 </button>
-                                                <button className="c-del" onClick={() => eliminar(curso.id)} title="Eliminar" style={{ width: 36, height: 36, padding: 0, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 10, border: "1px solid rgba(245,48,3,.2)", background: "rgba(245,48,3,.05)", color: "#f53003", cursor: "pointer" }}>
-                                                    <Trash2 size={13} />
+                                                <button type="button" className={eduBtnDanger} onClick={() => eliminar(curso.id)} title="Eliminar">
+                                                    <Trash2 className="h-3.5 w-3.5" />
                                                 </button>
                                             </div>
                                         </div>

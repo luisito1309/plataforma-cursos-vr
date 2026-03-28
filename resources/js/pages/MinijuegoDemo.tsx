@@ -7,6 +7,7 @@ import QuizMedico3D from '@/components/QuizMedico3D';
 import AnatomiaHumana3D from '@/components/AnatomiaHumana3D';
 import Computer3D from '@/components/Computer3D';
 import CreativeBox from '@/components/CreativeBox';
+import GamesFPS from '@/components/GamesFPS';
 import { headerEnter, pageEnter, rm } from '@/lib/edu-motion';
 
 const TITLES: Record<string, string> = {
@@ -14,9 +15,10 @@ const TITLES: Record<string, string> = {
     anatomia_humana: 'Anatomía humana 3D',
     computer_3d: 'Computer 3D',
     creative_box: 'Creative Box',
+    games_fps: 'Games FPS',
 };
 
-const ALLOWED = new Set(['quiz_medico', 'anatomia_humana', 'computer_3d', 'creative_box']);
+const ALLOWED = new Set(['quiz_medico', 'anatomia_humana', 'computer_3d', 'creative_box', 'games_fps']);
 
 export default function MinijuegoDemo({ juego }: { juego: string }) {
     const fsRef = useRef<HTMLDivElement>(null);
@@ -88,6 +90,13 @@ export default function MinijuegoDemo({ juego }: { juego: string }) {
                     {juego === 'creative_box' && (
                         <div className="mx-auto w-full max-w-7xl rounded-2xl border border-violet-500/25 bg-slate-950/90 p-4 shadow-lg shadow-violet-900/20 backdrop-blur-sm md:p-6">
                             <CreativeBox preview cursoId={0} />
+                        </div>
+                    )}
+                    {juego === 'games_fps' && (
+                        <div className="mx-auto w-full min-h-[70vh] max-w-6xl rounded-2xl border border-cyan-500/20 bg-slate-950/90 p-2 shadow-lg shadow-cyan-900/10 backdrop-blur-sm md:p-4">
+                            <div className="h-[min(72vh,720px)] min-h-[420px] w-full">
+                                <GamesFPS preview cursoId={0} />
+                            </div>
                         </div>
                     )}
                 </motion.div>

@@ -10,14 +10,9 @@ import {
     pageEnter,
     rm,
 } from '@/lib/edu-motion';
+import { eduNavOutline, eduNavPrimary } from '@/lib/edu-ui';
 
-/** Botón secundario (glass, cyan) — alineado con Home */
-export const eduNavOutline =
-    'inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-slate-300 backdrop-blur-sm transition-colors hover:border-cyan-500/30 hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/45';
-
-/** Botón principal (gradiente cyan → azul) */
-export const eduNavPrimary =
-    'inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2 text-sm font-semibold text-slate-950 shadow-md shadow-cyan-500/25 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50';
+export { eduNavOutline, eduNavPrimary } from '@/lib/edu-ui';
 
 type EduPageShellProps = {
     title?: string;

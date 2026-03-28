@@ -7,6 +7,7 @@ export const MINIJUEGO_IDS_PANTALLA_COMPLETA = [
     "anatomia_humana",
     "computer_3d",
     "creative_box",
+    "games_fps",
 ] as const;
 
 export function minijuegoTienePantallaCompleta(juegoId: string | null | undefined): boolean {

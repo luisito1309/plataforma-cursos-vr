@@ -70,7 +70,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::get('/minijuego/{juego}', function (string $juego) {
-    $permitidos = ['quiz_medico', 'anatomia_humana', 'computer_3d', 'creative_box'];
+    $permitidos = ['quiz_medico', 'anatomia_humana', 'computer_3d', 'creative_box', 'games_fps'];
     if (! in_array($juego, $permitidos, true)) {
         abort(404);
     }
