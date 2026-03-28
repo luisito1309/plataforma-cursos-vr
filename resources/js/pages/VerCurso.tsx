@@ -82,6 +82,11 @@ const MINI_JUEGOS_INFO: Record<string, { label: string; tag: string; icon: React
         tag: "VOX",
         icon: <Box size={14} />,
     },
+    games_fps: {
+        label: "Games FPS",
+        tag: "FPS",
+        icon: <Crosshair size={14} />,
+    },
     // ── Juegos futuros ────────────────────────────────────────────────────────
     // quiz_vr:    { label: "Quiz VR",          tag: "VR",  icon: <Gamepad2 size={14} />, url: "https://..." },
     // escape_vr:  { label: "Escape Room VR",   tag: "VR",  icon: <Monitor  size={14} />, url: "https://..." },
@@ -670,6 +675,20 @@ export default function VerCurso({ id }: { id: number }) {
                                 </div>
                                 <div style={{ height: 1, background: "linear-gradient(to right, rgba(34,211,238,.2), transparent)", marginTop: 20 }} />
                             </div>
+
+                            {curso.mini_juego === "games_fps" && miniJuegoLocalListo && (
+                                <div
+                                    className="mb-6 rounded-xl border border-emerald-500/35 bg-emerald-500/[0.09] px-4 py-3 text-center dark:border-emerald-500/30 dark:bg-emerald-950/40"
+                                    role="status"
+                                >
+                                    <p className="m-0 text-base font-bold text-emerald-700 dark:text-emerald-300">
+                                        ¡Has finalizado el juego de Games!
+                                    </p>
+                                    <p className="mt-1.5 m-0 text-xs text-emerald-900/80 dark:text-emerald-200/80">
+                                        Tu progreso en este minijuego está registrado en este curso.
+                                    </p>
+                                </div>
+                            )}
 
                             {/* ── Selector de juegos (tabs) ── */}
                             <div style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>

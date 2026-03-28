@@ -502,13 +502,13 @@ export default function Cursos() {
                                     titulo="Vista previa — Games FPS"
                                     wrapStyle={{
                                         marginTop: 24,
-                                        padding: "12px",
+                                        padding: "16px",
                                         background: "rgb(15 23 42 / 0.75)",
                                         borderRadius: 16,
                                         border: "1px solid rgba(255,255,255,.1)",
                                     }}
                                 >
-                                    <div className="h-[220px] min-h-[200px] w-full max-w-3xl">
+                                    <div className="min-h-[min(52vh,560px)] w-full max-w-5xl">
                                         <GamesFPS preview cursoId={0} />
                                     </div>
                                 </PreviaMinijuegoConFullscreen>

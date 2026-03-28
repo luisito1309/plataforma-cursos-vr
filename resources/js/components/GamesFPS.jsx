@@ -5,7 +5,7 @@ import { isMinijuegoOk, setMinijuegoOk } from "@/lib/minijuegoStorage";
 
 export const STORAGE_KEY = "games_fps";
 
-const ROOM = 14;
+const ROOM = 24;
 const PLAYER_R = 0.35;
 const EYE_H = 1.6;
 const POINTER_SPEED = 1.35;
@@ -15,14 +15,14 @@ const WALK_SPEED = 12;
 const SPRINT_MULT = 1.55;
 const GROUND_EPS = 0.02;
 const FIRE_COOLDOWN = 0.18;
-const ENEMY_HP = 1;
+const ENEMY_HP = 2;
 const ENEMY_SPEED = 3.5;
 const ENEMY_WANDER = 2;
 const ENEMY_SIZE = { x: 0.75, y: 1.2, z: 0.75 };
 const MAX_ALIVE = 6;
-const SPAWN_DELAY = 2;
-const DEFAULT_KILLS_TO_WIN = 15;
-const PREVIEW_KILLS = 5;
+const SPAWN_DELAY = 2.6;
+const DEFAULT_KILLS_TO_WIN = 32;
+const PREVIEW_KILLS = 6;
 const PLAYER_HP_MAX = 100;
 const CONTACT_DAMAGE = 10;
 const CONTACT_CD = 0.85;
@@ -139,6 +139,37 @@ function buildLevel(scene) {
     addBox(2.5, 2, 2.5, 5, 0, 4);
     addBox(6, 1.2, 1.2, 0, 0, 7);
     addBox(2, 1.5, 4, -6, 0, 5);
+    addBox(5, 2.2, 2, 10, 0, -8);
+    addBox(2, 3, 2, -10, 0, 8);
+    addBox(8, 1.4, 2, -2, 0, -12);
+    addBox(3, 1.6, 7, 14, 0, 2);
+    addBox(6, 1.8, 4, -14, 0, -6);
+    addBox(4, 1.2, 4, 6, 0, 12);
+    addBox(2.5, 2.4, 2.5, -8, 0, -10);
+    addBox(10, 1, 3, 0, 0, -16);
+    addBox(1.5, 4, 1.5, -12, 0, 0);
+    addBox(1.5, 4, 1.5, 12, 0, 0);
+    addBox(7, 1.3, 1.3, 4, 0, -14);
+    addBox(3, 1.1, 9, -16, 0, 4);
+    addBox(5, 1.5, 3, 16, 0, -4);
+    const boxMat2 = new THREE.MeshStandardMaterial({ color: 0x3d485e, roughness: 0.72, metalness: 0.12 });
+    const addBoxColored = (mat, sx, sy, sz, x, y, z) => {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat);
+        m.position.set(x, y + sy / 2, z);
+        m.castShadow = true;
+        m.receiveShadow = true;
+        scene.add(m);
+        const hx = sx / 2;
+        const hz = sz / 2;
+        solids.push({
+            min: new THREE.Vector3(x - hx, y, z - hz),
+            max: new THREE.Vector3(x + hx, y + sy, z + hz),
+        });
+    };
+    addBoxColored(boxMat2, 12, 0.6, 1.2, 0, 0, 9);
+    addBoxColored(boxMat2, 1.2, 0.6, 12, -9, 0, 0);
+    addBoxColored(boxMat2, 4, 0.8, 4, 8, 0, -6);
+    addBoxColored(boxMat2, 4, 0.8, 4, -8, 0, 6);
 
     const R = ROOM;
     const wallH = 7;
@@ -235,18 +266,22 @@ export default function GamesFPS({
         hp: PLAYER_HP_MAX,
         locked: false,
         done: false,
+        lost: false,
         hitMarker: false,
     });
     const [alreadyDone, setAlreadyDone] = useState(false);
+    const [replayKey, setReplayKey] = useState(0);
 
     const doneRef = useRef(false);
+    const unlockPointerRef = useRef(() => {});
     const onCompletadoRef = useRef(onCompletado);
     onCompletadoRef.current = onCompletado;
 
     const completeGame = useCallback(() => {
         if (doneRef.current) return;
         doneRef.current = true;
-        setHud((h) => ({ ...h, done: true }));
+        unlockPointerRef.current();
+        setHud((h) => ({ ...h, done: true, lost: false }));
         if (persistOk) {
             setMinijuegoOk(cursoId, STORAGE_KEY);
             try {
@@ -259,6 +294,22 @@ export default function GamesFPS({
         }
         onCompletadoRef.current?.();
     }, [cursoId, persistOk]);
+
+    const handlePlayAgain = useCallback(() => {
+        doneRef.current = false;
+        setHud({
+            score: 0,
+            kills: 0,
+            killsToWin,
+            alive: 0,
+            hp: PLAYER_HP_MAX,
+            locked: false,
+            done: false,
+            lost: false,
+            hitMarker: false,
+        });
+        setReplayKey((k) => k + 1);
+    }, [killsToWin]);
 
     useEffect(() => {
         if (persistOk && isMinijuegoOk(cursoId, STORAGE_KEY)) {
@@ -502,11 +553,11 @@ export default function GamesFPS({
 
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0x070a10);
-        scene.fog = new THREE.Fog(0x070a10, 18, 52);
+        scene.fog = new THREE.Fog(0x070a10, 38, 96);
 
         const w = mount.clientWidth || 640;
         const h = mount.clientHeight || 400;
-        camera = new THREE.PerspectiveCamera(75, w / h, 0.05, 140);
+        camera = new THREE.PerspectiveCamera(75, w / h, 0.05, 220);
         camera.rotation.order = "YXZ";
 
         renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
@@ -536,6 +587,21 @@ export default function GamesFPS({
                 /* noop */
             }
         };
+
+        unlockPointerRef.current = () => {
+            try {
+                controls?.unlock();
+            } catch {
+                /* noop */
+            }
+        };
+
+        function failGame() {
+            if (doneRef.current) return;
+            doneRef.current = true;
+            unlockPointerRef.current();
+            setHud((s) => ({ ...s, done: true, lost: true, hp: 0 }));
+        }
 
         controls.addEventListener("lock", () => {
             console.log("FPS activo");
@@ -656,6 +722,7 @@ export default function GamesFPS({
                         contactCd = CONTACT_CD;
                         playerHp = Math.max(0, playerHp - CONTACT_DAMAGE);
                         setHud((s) => ({ ...s, hp: playerHp }));
+                        if (playerHp <= 0) queueMicrotask(failGame);
                     }
                 });
 
@@ -691,13 +758,15 @@ export default function GamesFPS({
             ro.disconnect();
             dispose();
         };
-    }, [preview, killsToWin, completeGame, cursoId]);
+    }, [preview, killsToWin, completeGame, cursoId, replayKey]);
 
     if (alreadyDone && !preview) {
         return (
-            <div className="flex min-h-[200px] flex-col items-center justify-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-6 py-10 text-center">
-                <p className="text-lg font-semibold text-emerald-300">Ya completaste este minijuego</p>
-                <p className="text-sm text-slate-400">Puedes volver a entrar al curso cuando quieras.</p>
+            <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 rounded-xl border border-emerald-500/35 bg-emerald-500/[0.08] px-6 py-10 text-center">
+                <p className="text-xl font-bold text-emerald-400">¡Has finalizado el juego de Games!</p>
+                <p className="max-w-md text-sm text-slate-400">
+                    Tu progreso quedó guardado en este curso. Puedes seguir repasando el resto del contenido del aula cuando quieras.
+                </p>
             </div>
         );
     }
@@ -764,10 +833,44 @@ export default function GamesFPS({
                     )}
                 </button>
             )}
-            {hud.done && !preview && (
-                <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/85 text-center backdrop-blur-md">
-                    <p className="text-2xl font-bold text-emerald-400">¡Juego completado!</p>
-                    <p className="mt-2 text-slate-300">Puntuación final: {hud.score}</p>
+            {hud.done && !hud.lost && (
+                <div className="absolute inset-0 z-40 flex flex-col items-center justify-center overflow-y-auto bg-black/85 px-4 py-8 text-center backdrop-blur-md">
+                    <p className="text-2xl font-bold text-emerald-400">¡Has finalizado el juego de Games!</p>
+                    <p className="mt-2 max-w-md text-sm text-slate-300">El minijuego terminó correctamente. Buen trabajo.</p>
+                    <div className="mt-5 max-w-md rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left text-sm leading-relaxed text-slate-300">
+                        <p className="mb-2 font-semibold text-emerald-300/95">¿Qué es este juego?</p>
+                        <p className="mb-2">
+                            Es un <strong className="text-slate-200">shooter en primera persona</strong>: te mueves por el escenario, apuntas con el ratón y disparas a los enemigos (cubos rojos) antes de que te alcancen.
+                        </p>
+                        <p className="mb-2">
+                            <strong className="text-slate-200">Controles:</strong> WASD para moverte, ratón para mirar (tras hacer clic para capturar el puntero), clic izquierdo para disparar, espacio para saltar y Shift para ir más rápido.
+                        </p>
+                        <p>
+                            <strong className="text-slate-200">Tu logro:</strong> has eliminado <strong className="text-emerald-400">{hud.killsToWin}</strong> enemigos y has completado el objetivo del minijuego.
+                        </p>
+                    </div>
+                    <p className="mt-5 text-lg font-semibold text-white">Puntuación final: {hud.score}</p>
+                    <button
+                        type="button"
+                        onClick={handlePlayAgain}
+                        className="mt-8 rounded-xl border border-emerald-500/40 bg-emerald-600/90 px-8 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400/80"
+                    >
+                        Jugar de nuevo
+                    </button>
+                </div>
+            )}
+            {hud.done && hud.lost && (
+                <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/90 px-4 text-center backdrop-blur-md">
+                    <p className="text-2xl font-bold text-rose-400">Has perdido la partida</p>
+                    <p className="mt-2 max-w-md text-sm text-slate-400">Tu vida llegó a 0. Vuelve a intentarlo cuando quieras.</p>
+                    <p className="mt-4 text-slate-500">Puntuación: {hud.score}</p>
+                    <button
+                        type="button"
+                        onClick={handlePlayAgain}
+                        className="mt-8 rounded-xl border border-rose-500/40 bg-rose-900/80 px-8 py-3 text-sm font-semibold text-rose-100 transition hover:bg-rose-800/90 focus:outline-none focus:ring-2 focus:ring-rose-400/80"
+                    >
+                        Jugar de nuevo
+                    </button>
                 </div>
             )}
 
