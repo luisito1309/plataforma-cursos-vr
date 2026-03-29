@@ -9,6 +9,7 @@ import Computer3D from "@/components/Computer3D";
 import MiniJuegoProgreso from "@/components/MiniJuegoProgreso";
 import CreativeBox from "@/components/CreativeBox";
 import GamesFPS from "@/components/GamesFPS";
+import CarsGame from "@/components/CarsGame";
 import { MinijuegoFullscreenToggleButton } from "@/components/MinijuegoFullscreenControls";
 import {
     eduBadgeEyebrow,
@@ -41,7 +42,7 @@ import { cn } from "@/lib/utils";
 import {
     BookOpen, Home, Plus, X,
     Upload, Edit2, Trash2, UserPlus, Play, Monitor,
-    Gamepad2, Glasses, Cpu, Zap, ScanLine, Box, Crosshair,
+    Gamepad2, Glasses, Cpu, Zap, ScanLine, Box, Crosshair, Car,
 } from "lucide-react";
 
 // ─── Catálogo de mini juegos (escalable) ─────────────────────────────────────
@@ -57,6 +58,7 @@ const MINI_JUEGOS: MiniJuegoOption[] = [
     { value: "computer_3d", label: "Computer 3D", icon: <Cpu size={14} />, tag: "3D" },
     { value: "creative_box", label: "Creative Box", icon: <Box size={14} />, tag: "VOX" },
     { value: "games_fps", label: "Games FPS", icon: <Crosshair size={14} />, tag: "FPS" },
+    { value: "cars", label: "Cars", icon: <Car size={14} />, tag: "3D" },
     // Futuros juegos — descomenta para activar:
     // { value: "vr_escape",   label: "Escape Room VR",     icon: <Glasses  size={14} />, tag: "VR"   },
     // { value: "sim_fisica",  label: "Simulación Física",  icon: <Cpu      size={14} />, tag: "SIM"  },
@@ -83,7 +85,7 @@ function miniJuegosPorCategoria(cat: Categoria): MiniJuegoOption[] {
         case "tecnologia":
             return pick(["", "computer_3d"]);
         case "creativo":
-            return pick(["creative_box", "games_fps"]);
+            return pick(["creative_box", "games_fps", "cars"]);
         default:
             return [];
     }
@@ -510,6 +512,23 @@ export default function Cursos() {
                                 >
                                     <div className="min-h-[min(52vh,560px)] w-full max-w-5xl">
                                         <GamesFPS preview cursoId={0} />
+                                    </div>
+                                </PreviaMinijuegoConFullscreen>
+                            )}
+
+                            {miniJuego === "cars" && (
+                                <PreviaMinijuegoConFullscreen
+                                    titulo="Vista previa — Cars (conducción 3D)"
+                                    wrapStyle={{
+                                        marginTop: 24,
+                                        padding: "16px",
+                                        background: "rgb(15 23 42 / 0.75)",
+                                        borderRadius: 16,
+                                        border: "1px solid rgba(255,255,255,.1)",
+                                    }}
+                                >
+                                    <div className="min-h-[min(52vh,560px)] w-full max-w-5xl">
+                                        <CarsGame preview cursoId={0} />
                                     </div>
                                 </PreviaMinijuegoConFullscreen>
                             )}

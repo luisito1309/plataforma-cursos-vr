@@ -40,6 +40,7 @@ import {
     Users,
     Zap,
     Crosshair,
+    Car,
 } from "lucide-react";
 
 /** @typedef {{ id: number; titulo: string; descripcion: string; estado?: string; imagen?: string; duracion?: string; estudiantes?: number; rating?: number; categoria?: string }} Curso */
@@ -51,6 +52,7 @@ const MINI_SHOWCASE = [
     { id: "computer_3d", label: "Computer 3D", tag: "Tecnología", Icon: Cpu, blurb: "Montaje y piezas 3D." },
     { id: "creative_box", label: "Creative Box", tag: "Creativo", Icon: Box, blurb: "Construcción voxel libre." },
     { id: "games_fps", label: "Games FPS", tag: "Creativo", Icon: Crosshair, blurb: "Mini FPS 3D con objetivos." },
+    { id: "cars", label: "Cars", tag: "Creativo", Icon: Car, blurb: "Conducción 3D con mapa y físicas." },
 ];
 
 // ─── Catálogos (entrada desde la izquierda) ──────────────────────────────────

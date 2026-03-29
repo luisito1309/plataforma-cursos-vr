@@ -21,6 +21,7 @@ import Computer3D from "@/components/Computer3D";
 import MiniJuegoProgreso from "@/components/MiniJuegoProgreso";
 import CreativeBox from "@/components/CreativeBox";
 import GamesFPS from "@/components/GamesFPS";
+import CarsGame from "@/components/CarsGame";
 import {
     MinijuegoFullscreenToggleButton,
     minijuegoTienePantallaCompleta,
@@ -28,7 +29,7 @@ import {
 import {
     Home, ArrowLeft, Play, ChevronDown,
     Plus, X, Edit2, Trash2, FileText, Video, Layers,
-    SkipBack, SkipForward, Monitor, Gamepad2, Zap, ScanLine, Glasses, Cpu, Box, Crosshair,
+    SkipBack, SkipForward, Monitor, Gamepad2, Zap, ScanLine, Glasses, Cpu, Box, Crosshair, Car,
 } from "lucide-react";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
@@ -86,6 +87,11 @@ const MINI_JUEGOS_INFO: Record<string, { label: string; tag: string; icon: React
         label: "Games FPS",
         tag: "FPS",
         icon: <Crosshair size={14} />,
+    },
+    cars: {
+        label: "Cars",
+        tag: "3D",
+        icon: <Car size={14} />,
     },
     // ── Juegos futuros ────────────────────────────────────────────────────────
     // quiz_vr:    { label: "Quiz VR",          tag: "VR",  icon: <Gamepad2 size={14} />, url: "https://..." },
@@ -690,6 +696,20 @@ export default function VerCurso({ id }: { id: number }) {
                                 </div>
                             )}
 
+                            {curso.mini_juego === "cars" && miniJuegoLocalListo && (
+                                <div
+                                    className="mb-6 rounded-xl border border-emerald-500/35 bg-emerald-500/[0.09] px-4 py-3 text-center dark:border-emerald-500/30 dark:bg-emerald-950/40"
+                                    role="status"
+                                >
+                                    <p className="m-0 text-base font-bold text-emerald-700 dark:text-emerald-300">
+                                        ¡Has completado Cars!
+                                    </p>
+                                    <p className="mt-1.5 m-0 text-xs text-emerald-900/80 dark:text-emerald-200/80">
+                                        Tu progreso en este minijuego está registrado en este curso.
+                                    </p>
+                                </div>
+                            )}
+
                             {/* ── Selector de juegos (tabs) ── */}
                             <div style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
                                 {juegosDisponibles.map(key => {
@@ -848,6 +868,16 @@ export default function VerCurso({ id }: { id: number }) {
                                             ) : juegoSeleccionado === "creative_box" ? (
                                                 <div style={{ padding: 24, background: "#0a0e14" }}>
                                                     <CreativeBox
+                                                        cursoId={id}
+                                                        onCompletado={() => {
+                                                            setMiniJuegoLocalListo(true);
+                                                            cargarCurso();
+                                                        }}
+                                                    />
+                                                </div>
+                                            ) : juegoSeleccionado === "cars" ? (
+                                                <div style={{ padding: 24, background: "#0a0e14" }}>
+                                                    <CarsGame
                                                         cursoId={id}
                                                         onCompletado={() => {
                                                             setMiniJuegoLocalListo(true);

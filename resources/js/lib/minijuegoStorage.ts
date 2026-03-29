@@ -34,6 +34,7 @@ export const MINIJUEGOS_CON_PROGRESO_LOCAL = [
     'konterball',
     'creative_box',
     'games_fps',
+    'cars',
 ] as const;
 
 export function miniJuegoTieneProgresoLocal(juego: string | null | undefined): boolean {

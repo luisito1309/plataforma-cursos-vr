@@ -8,6 +8,7 @@ export const MINIJUEGO_IDS_PANTALLA_COMPLETA = [
     "computer_3d",
     "creative_box",
     "games_fps",
+    "cars",
 ] as const;
 
 export function minijuegoTienePantallaCompleta(juegoId: string | null | undefined): boolean {
