@@ -7,21 +7,24 @@ export const STORAGE_KEY = "cars";
 
 const GRAVITY = 28;
 const JUMP_V = 9;
-const ACCEL = 56;
-const BRAKE = 40;
-const FRICTION = 2.65;
-const MAX_SPEED = 44;
-const MAX_SPEED_REV = 15;
-const TURN_SPEED = 3.35;
-const TURBO_SPEED_MULT = 2.35;
+const ACCEL = 118;
+const MAX_SPEED = 86;
+const MAX_SPEED_REV = 28;
+const TURN_SPEED = 2.95;
+const TURN_SPEED_MIN_RATIO = 0.26;
+const COAST_DRAG = 0.968;
+const COAST_DRAG_REF_HZ = 60;
+const TURBO_SPEED_MULT = 2.5;
 const MAX_TURBO_TIME = 3;
 const TURBO_COOLDOWN = 2.25;
-const CAMERA_LERP = 0.12;
-const CAMERA_HEIGHT = 5.2;
-const CAMERA_DIST = 10;
-const CAMERA_DIST_TURBO_EXTRA = 5;
+const CAMERA_LERP = 0.14;
+const CAMERA_HEIGHT = 5.35;
+const CAMERA_DIST = 10.5;
+const CAMERA_DIST_TURBO_EXTRA = 6;
+const CAMERA_DIST_SPEED_EXTRA = 3.2;
 const CAMERA_BASE_FOV = 58;
-const CAMERA_TURBO_FOV_BOOST = 12;
+const CAMERA_TURBO_FOV_BOOST = 14;
+const CAMERA_SPEED_FOV_MAX = 16;
 const GROUND_RAY_UP = 40;
 const GROUND_EPS = 0.08;
 const MAP_SCALE = 5;
@@ -66,33 +69,102 @@ function collectMeshes(root) {
     return meshes;
 }
 
+const MAX_COLLISION_VERTS = 100000;
+
+/** @param {THREE.Object3D} o */
+function isWorldHierarchyVisible(o) {
+    let p = o;
+    while (p) {
+        if (!p.visible) return false;
+        p = p.parent;
+    }
+    return true;
+}
+
+/** @param {THREE.Material | THREE.Material[]} mat */
+function materialsFullyInvisible(mat) {
+    if (!mat) return false;
+    const arr = Array.isArray(mat) ? mat : [mat];
+    if (arr.length === 0) return false;
+    return arr.every((m) => {
+        if (!m) return true;
+        if (m.visible === false) return true;
+        if (m.transparent && (m.opacity ?? 1) <= 0.02) return true;
+        return false;
+    });
+}
+
+/**
+ * @param {THREE.Mesh} child
+ * @param {THREE.Vector3} tmpSize
+ * @param {THREE.Box3} worldBounds
+ */
+function isCollidableMapMesh(child, tmpSize, worldBounds) {
+    if (!child.isMesh || !child.geometry) return false;
+    if (!isWorldHierarchyVisible(child)) return false;
+    if (materialsFullyInvisible(child.material)) return false;
+
+    const pos = child.geometry.attributes.position;
+    if (!pos || pos.count === 0 || pos.count > MAX_COLLISION_VERTS) return false;
+
+    const n = child.name.trim().toLowerCase();
+    if (
+        n === "no-collision" ||
+        n.includes("no-collision") ||
+        n.includes("nocol") ||
+        n.includes("nocollide") ||
+        n.includes("__debug") ||
+        n.includes("trigger") ||
+        n.includes("col-helper")
+    ) {
+        return false;
+    }
+    if (n.includes("sky") || n.includes("cielo") || n.includes("cloud") || n.includes("fog")) return false;
+    if ((n.includes("light") || n.includes("luz_") || n.includes("lamp")) && !n.includes("traffic") && !n.includes("sema")) {
+        return false;
+    }
+    if (n.includes("decor") && (n.includes("sprite") || n.includes("billboard"))) return false;
+
+    child.geometry.computeBoundingBox();
+    child.geometry.computeBoundingSphere();
+    const bb = child.geometry.boundingBox;
+    if (!bb || bb.isEmpty()) return false;
+
+    const box = new THREE.Box3().setFromObject(child);
+    if (box.isEmpty()) return false;
+
+    box.getSize(tmpSize);
+    const vol = tmpSize.x * tmpSize.y * tmpSize.z;
+    if (!worldBounds.isEmpty()) {
+        worldBounds.getSize(_worldBoundsSizeTmp);
+        const wxz = Math.max(_worldBoundsSizeTmp.x * _worldBoundsSizeTmp.z, 1);
+        if (tmpSize.y < 0.6 && tmpSize.x * tmpSize.z > wxz * 0.92 && tmpSize.y < tmpSize.x * 0.04) {
+            return false;
+        }
+    }
+    if (vol < 1e-6) return false;
+
+    return true;
+}
+
+const _worldBoundsSizeTmp = new THREE.Vector3();
+
 /**
  * @param {THREE.Object3D} mapRoot
  * @param {THREE.Box3} worldBounds
- * @returns {THREE.Box3[]}
+ * @returns {{ mesh: THREE.Mesh; box: THREE.Box3 }[]}
  */
-function collectObstacleBoxes(mapRoot, worldBounds) {
-    /** @type {THREE.Box3[]} */
-    const out = [];
-    const tmp = new THREE.Vector3();
+function buildMapObstacles(mapRoot, worldBounds) {
     mapRoot.updateMatrixWorld(true);
-    let worldVol = 1;
-    if (!worldBounds.isEmpty()) {
-        worldBounds.getSize(tmp);
-        worldVol = Math.max(tmp.x * tmp.y * tmp.z, 1);
-    }
+    /** @type {{ mesh: THREE.Mesh; box: THREE.Box3 }[]} */
+    const out = [];
+    const tmpSize = new THREE.Vector3();
     mapRoot.traverse((child) => {
-        if (!child.isMesh || !child.geometry) return;
-        const n = child.name.toLowerCase();
-        if (n.includes("sky") || n.includes("cielo") || n.includes("cloud")) return;
-        const box = new THREE.Box3().setFromObject(child);
+        if (!isCollidableMapMesh(/** @type {THREE.Mesh} */(child), tmpSize, worldBounds)) return;
+        const mesh = /** @type {THREE.Mesh} */ (child);
+        const box = new THREE.Box3().setFromObject(mesh);
         if (box.isEmpty()) return;
-        const size = box.getSize(tmp);
-        const vol = size.x * size.y * size.z;
-        if (vol > worldVol * 0.35 || vol > 120000) return;
-        if (size.y < 0.22 && size.x * size.z > 90) return;
-        if (size.x > 180 && size.z > 180 && size.y < 2.5) return;
-        out.push(box.clone());
+        out.push({ mesh, box: box.clone() });
     });
     return out;
 }
@@ -148,7 +220,7 @@ function disposeObject(root) {
  */
 export default function CarsGame({ preview = false, cursoId = 0, onCompletado }) {
     const mountRef = useRef(null);
-    const focusRef = useRef(() => {});
+    const focusRef = useRef(() => { });
     const persistOk = typeof cursoId === "number" && cursoId > 0;
     const bestStorageKey = `edu_cars_lap_best_${persistOk ? String(cursoId) : "demo"}`;
 
@@ -241,8 +313,12 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
         let mapRoot = null;
         /** @type {THREE.Mesh[]} */
         let groundMeshes = [];
-        /** @type {THREE.Box3[]} */
-        let obstacleBoxes = [];
+        /** @type {{ mesh: THREE.Mesh; box: THREE.Box3 }[]} */
+        let mapObstacles = [];
+        /** @type {THREE.Group | null} */
+        let collisionDebugRoot = null;
+        let collisionDebugBuilt = false;
+        let showCollisionDebug = false;
         const worldBounds = new THREE.Box3();
         let mapLoaded = false;
 
@@ -419,7 +495,23 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
             }
         }
 
+        const syncCollisionDebugHelpers = () => {
+            if (!collisionDebugRoot) return;
+            collisionDebugRoot.visible = showCollisionDebug;
+            if (!showCollisionDebug || collisionDebugBuilt) return;
+            for (const o of mapObstacles) {
+                collisionDebugRoot.add(new THREE.Box3Helper(o.box, 0xff2200));
+            }
+            collisionDebugBuilt = true;
+        };
+
         const onKeyDown = (e) => {
+            if (e.code === "KeyB" && modelsReady && mapObstacles.length) {
+                e.preventDefault();
+                showCollisionDebug = !showCollisionDebug;
+                syncCollisionDebugHelpers();
+                return;
+            }
             if (e.code === "Enter" && modelsReady && !doneRef.current && !lapCompleted) {
                 if (!raceStarted) {
                     e.preventDefault();
@@ -704,6 +796,10 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0x060810);
         scene.fog = new THREE.Fog(0x060810, 45, 220);
+        collisionDebugRoot = new THREE.Group();
+        collisionDebugRoot.name = "cars-collision-debug";
+        collisionDebugRoot.visible = false;
+        scene.add(collisionDebugRoot);
 
         const w = mount.clientWidth || 640;
         const h = mount.clientHeight || 400;
@@ -768,7 +864,22 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
                 groundMeshes = collectMeshes(mapRoot);
                 worldBounds.makeEmpty();
                 expandBox(mapRoot, worldBounds);
-                obstacleBoxes = collectObstacleBoxes(mapRoot, worldBounds);
+                mapObstacles = buildMapObstacles(mapRoot, worldBounds);
+                collisionDebugBuilt = false;
+                if (collisionDebugRoot) {
+                    while (collisionDebugRoot.children.length) {
+                        const ch = collisionDebugRoot.children[0];
+                        collisionDebugRoot.remove(ch);
+                        ch.traverse((o) => {
+                            if (o.geometry) o.geometry.dispose();
+                            if (o.material) {
+                                const m = o.material;
+                                if (Array.isArray(m)) m.forEach((x) => x.dispose());
+                                else m.dispose();
+                            }
+                        });
+                    }
+                }
                 mapRoot.traverse((o) => {
                     if (o.isMesh) {
                         o.castShadow = true;
@@ -856,6 +967,7 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
 
         focusRef.current = () => {
             renderer?.domElement?.focus?.();
+
         };
 
         window.addEventListener("keydown", onKeyDown);
@@ -903,27 +1015,28 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
                 if (inputActive) {
                     const accBoost = turbo ? TURBO_SPEED_MULT : 1;
                     if (keys.w) forwardSpeed += ACCEL * accBoost * dt;
-                    if (keys.s) forwardSpeed -= BRAKE * dt;
+                    if (keys.s) forwardSpeed -= ACCEL * accBoost * dt;
+                    if (!keys.w && !keys.s) {
+                        const drag = grounded ? COAST_DRAG : 0.985;
+                        forwardSpeed *= Math.pow(drag, dt * COAST_DRAG_REF_HZ);
+                    }
+                } else {
+                    forwardSpeed *= Math.pow(0.02, dt * 8);
                 }
-                const friction = FRICTION * (grounded ? 1 : 0.35) * dt;
-                if (forwardSpeed > 0) forwardSpeed = Math.max(0, forwardSpeed - friction);
-                else if (forwardSpeed < 0) forwardSpeed = Math.min(0, forwardSpeed + friction);
-
-                if (!inputActive) forwardSpeed *= Math.pow(0.02, dt * 8);
 
                 forwardSpeed = Math.max(-speedCapRev, Math.min(speedCapFwd, forwardSpeed));
 
-                const speedTurnFactor = 1 / (1 + Math.abs(forwardSpeed) * 0.055);
+                const speedRatioForTurn = Math.min(1, Math.abs(forwardSpeed) / MAX_SPEED);
+                const turnScale = TURN_SPEED_MIN_RATIO + (1 - TURN_SPEED_MIN_RATIO) * speedRatioForTurn;
                 if (inputActive) {
-                    if (keys.a) rotY += TURN_SPEED * speedTurnFactor * dt * (forwardSpeed >= 0 ? 1 : -1);
-                    if (keys.d) rotY -= TURN_SPEED * speedTurnFactor * dt * (forwardSpeed >= 0 ? 1 : -1);
+                    if (keys.a) rotY += TURN_SPEED * turnScale * dt * (forwardSpeed >= 0 ? 1 : -1);
+                    if (keys.d) rotY -= TURN_SPEED * turnScale * dt * (forwardSpeed >= 0 ? 1 : -1);
                 }
                 carGroup.rotation.y = rotY;
 
                 tmpV.set(Math.sin(rotY), 0, Math.cos(rotY));
                 if (inputActive || Math.abs(forwardSpeed) > 0.01) {
-                    const step = forwardSpeed * dt;
-                    carGroup.position.addScaledVector(tmpV, step);
+                    carGroup.position.addScaledVector(tmpV, forwardSpeed * dt);
                 }
 
                 const cxz = clampToArea(carGroup.position.x, carGroup.position.z);
@@ -937,15 +1050,16 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
                 let hitImpulse = false;
                 let hitFx = 0;
                 let hitFz = 0;
-                if (obstacleBoxes.length && inputActive) {
+                const runCollisions = raceStarted && !lapCompleted && (inputActive || Math.abs(forwardSpeed) > 0.04);
+                if (mapObstacles.length && runCollisions) {
                     for (let it = 0; it < COLLISION_ITERS; it++) {
                         let moved = false;
-                        for (let i = 0; i < obstacleBoxes.length; i++) {
-                            const ob = obstacleBoxes[i];
-                            if (!carBox.intersectsBox(ob)) continue;
+                        for (let i = 0; i < mapObstacles.length; i++) {
+                            const ob = mapObstacles[i];
+                            if (!carBox.intersectsBox(ob.box)) continue;
                             const before = carGroup.position.x;
                             const beforeZ = carGroup.position.z;
-                            pushOutCarAABB(carBox, ob, carGroup.position);
+                            pushOutCarAABB(carBox, ob.box, carGroup.position);
                             const dx = carGroup.position.x - before;
                             const dz = carGroup.position.z - beforeZ;
                             hitFx += dx;
@@ -1023,9 +1137,16 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
                     }
                 }
 
-                targetFov = CAMERA_BASE_FOV + (turbo ? CAMERA_TURBO_FOV_BOOST : 0);
-                camera.fov += (targetFov - camera.fov) * Math.min(1, dt * 6);
-                targetCamDist = CAMERA_DIST + (turbo ? CAMERA_DIST_TURBO_EXTRA : 0);
+                const speedFovBlend = Math.min(1, Math.abs(forwardSpeed) / MAX_SPEED);
+                targetFov =
+                    CAMERA_BASE_FOV +
+                    speedFovBlend * CAMERA_SPEED_FOV_MAX +
+                    (turbo ? CAMERA_TURBO_FOV_BOOST : 0);
+                camera.fov += (targetFov - camera.fov) * Math.min(1, dt * 5.5);
+                targetCamDist =
+                    CAMERA_DIST +
+                    speedFovBlend * CAMERA_DIST_SPEED_EXTRA +
+                    (turbo ? CAMERA_DIST_TURBO_EXTRA : 0);
 
                 tmpV.set(Math.sin(rotY), 0, Math.cos(rotY));
                 cameraTarget.copy(carGroup.position);
@@ -1064,6 +1185,8 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
                     }));
                 }
             }
+
+            if (collisionDebugRoot?.visible) collisionDebugRoot.updateMatrixWorld(true);
 
             if (scene && camera && renderer) renderer.render(scene, camera);
         };
@@ -1105,6 +1228,17 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
             if (startLineGroup) {
                 scene?.remove(startLineGroup);
                 startLineGroup.traverse((o) => {
+                    if (o.geometry) o.geometry.dispose();
+                    if (o.material) {
+                        const m = o.material;
+                        if (Array.isArray(m)) m.forEach((x) => x.dispose());
+                        else m.dispose();
+                    }
+                });
+            }
+            if (collisionDebugRoot) {
+                scene?.remove(collisionDebugRoot);
+                collisionDebugRoot.traverse((o) => {
                     if (o.geometry) o.geometry.dispose();
                     if (o.material) {
                         const m = o.material;
@@ -1158,7 +1292,7 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
                 <div className="absolute inset-0 z-[35] flex flex-col items-center justify-center bg-black/72 px-4 text-center backdrop-blur-sm">
                     <p className="text-lg font-semibold text-white md:text-xl">Presiona ENTER para comenzar</p>
                     <p className="mt-2 max-w-sm text-xs text-slate-400">
-                        WASD · espacio · Shift turbo (depósito 3s, enfriamiento) · vuelta con doble paso por meta
+                        WASD · espacio · Shift turbo · vuelta (doble meta) · tecla B para ver colisiones del .glb
                     </p>
                 </div>
             )}
@@ -1206,8 +1340,8 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
                     </div>
                     <div className="pointer-events-none absolute bottom-3 left-3 z-20 max-w-md rounded border border-white/10 bg-black/60 px-3 py-2 text-[10px] text-slate-400 backdrop-blur-sm">
                         {preview
-                            ? "Vista previa · turbo con reserva · colisiones con el mapa"
-                            : "ENTER · SHIFT = turbo (3s max) · colisiones sólidas"}
+                            ? "Vista previa · B = ver cajas de colisión"
+                            : "ENTER · SHIFT · B = debug colisiones (Box3Helper)"}
                     </div>
                 </>
             )}
