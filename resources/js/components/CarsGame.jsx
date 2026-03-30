@@ -7,17 +7,18 @@ export const STORAGE_KEY = "cars";
 
 const GRAVITY = 28;
 const JUMP_V = 9;
-const ACCEL = 118;
-const MAX_SPEED = 86;
-const MAX_SPEED_REV = 28;
-const TURN_SPEED = 2.95;
+const ACCEL = 262;
+const MAX_SPEED = 108;
+const MAX_SPEED_REV = 34;
+const TURN_SPEED = 3.05;
 const TURN_SPEED_MIN_RATIO = 0.26;
 const COAST_DRAG = 0.968;
 const COAST_DRAG_REF_HZ = 60;
 const TURBO_SPEED_MULT = 2.5;
 const MAX_TURBO_TIME = 3;
 const TURBO_COOLDOWN = 2.25;
-const CAMERA_LERP = 0.14;
+/** Suavizado posicional de la cámara (mayor = menos “retraso”, más estable usar 4–8). */
+const CAMERA_POS_SMOOTH = 5.8;
 const CAMERA_HEIGHT = 5.35;
 const CAMERA_DIST = 10.5;
 const CAMERA_DIST_TURBO_EXTRA = 6;
@@ -28,10 +29,19 @@ const CAMERA_SPEED_FOV_MAX = 16;
 const GROUND_RAY_UP = 40;
 const GROUND_EPS = 0.08;
 const MAP_SCALE = 5;
-const AREA_MARGIN = 1.2;
+/**
+ * Colisión AABB con meshes del .glb (suele dejar “paredes” invisibles).
+ * false = circulación libre; solo gravedad + suelo por raycast.
+ */
+const MAP_MESH_COLLISIONS = false;
 const IMPACT_CD = 0.14;
-const CAR_BOX_PAD = 0.1;
-const COLLISION_ITERS = 6;
+/** Padding mínimo: la hitbox ya es compacta y orientada. */
+const CAR_BOX_PAD = 0.04;
+const COLLISION_ITERS = 5;
+/** Mitades del collider del coche en espacio local (ancho Y rotación, alto, largo hacia delante). */
+const CAR_HALF_W = 0.88;
+const CAR_HALF_H = 0.52;
+const CAR_HALF_L = 2.05;
 
 /** @param {{ x: number; z: number; width: number; depth: number }} line @param {{ x: number; z: number }} pos */
 function estaEnMeta(pos, line) {
@@ -141,13 +151,89 @@ function isCollidableMapMesh(child, tmpSize, worldBounds) {
         if (tmpSize.y < 0.6 && tmpSize.x * tmpSize.z > wxz * 0.92 && tmpSize.y < tmpSize.x * 0.04) {
             return false;
         }
+        const wVol = Math.max(
+            _worldBoundsSizeTmp.x * _worldBoundsSizeTmp.y * _worldBoundsSizeTmp.z,
+            1,
+        );
+        if (vol > wVol * 0.48) {
+            return false;
+        }
     }
     if (vol < 1e-6) return false;
+
+    const maxPlan = Math.max(tmpSize.x, tmpSize.z);
+    if (maxPlan > 0.35 && tmpSize.y < maxPlan * 0.16 && tmpSize.y < 4) {
+        return false;
+    }
+
+    const nLow = n;
+    if (
+        nLow.includes("ground") ||
+        nLow.includes("suelo") ||
+        nLow.includes("piso") ||
+        nLow.includes("asfalto") ||
+        nLow.includes("road") ||
+        nLow.includes("calle") ||
+        nLow.includes("terrain") ||
+        nLow.includes("terreno")
+    ) {
+        if (tmpSize.y < maxPlan * 0.22) return false;
+    }
 
     return true;
 }
 
 const _worldBoundsSizeTmp = new THREE.Vector3();
+const _carCollPt = new THREE.Vector3();
+
+/**
+ * Hitbox orientada con el rumbo del coche. `setFromObject` en el grupo completo
+ * genera un AABB enorme al girar y choca con “paredes invisibles”.
+ */
+function setOrientedCarColliderBox(box, pos, rotY) {
+    const c = Math.cos(rotY);
+    const s = Math.sin(rotY);
+    box.makeEmpty();
+    const hw = CAR_HALF_W;
+    const hh = CAR_HALF_H;
+    const hl = CAR_HALF_L;
+    const corners = [
+        [-hw, 0, -hl],
+        [hw, 0, -hl],
+        [hw, 0, hl],
+        [-hw, 0, hl],
+        [-hw, 2 * hh, -hl],
+        [hw, 2 * hh, -hl],
+        [hw, 2 * hh, hl],
+        [-hw, 2 * hh, hl],
+    ];
+    for (let i = 0; i < corners.length; i++) {
+        const lx = corners[i][0];
+        const ly = corners[i][1];
+        const lz = corners[i][2];
+        _carCollPt.x = pos.x + c * lx + s * lz;
+        _carCollPt.z = pos.z - s * lx + c * lz;
+        _carCollPt.y = pos.y + ly;
+        box.expandByPoint(_carCollPt);
+    }
+    box.expandByScalar(CAR_BOX_PAD);
+}
+
+const _obSizeTmp = new THREE.Vector3();
+
+/**
+ * Suelo / losa baja en la posición actual del coche: no debe frenar en XZ.
+ */
+function obstacleBlocksCarXZ(obstacleBox, groundYAtCar) {
+    obstacleBox.getSize(_obSizeTmp);
+    if (obstacleBox.max.y < groundYAtCar + 0.42 && _obSizeTmp.y < 2.2) {
+        return false;
+    }
+    if (_obSizeTmp.y < 0.55 && _obSizeTmp.y < Math.max(_obSizeTmp.x, _obSizeTmp.z) * 0.14) {
+        return false;
+    }
+    return true;
+}
 
 /**
  * @param {THREE.Object3D} mapRoot
@@ -239,6 +325,8 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
     });
     const [alreadyDone, setAlreadyDone] = useState(false);
     const [replayKey, setReplayKey] = useState(0);
+    /** Solo vista previa: pieza del GLB bajo el cursor. */
+    const [pickInfo, setPickInfo] = useState(null);
 
     const doneRef = useRef(false);
     const onCompletadoRef = useRef(onCompletado);
@@ -275,6 +363,7 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
             finishFlash: 0,
         });
         setReplayKey((k) => k + 1);
+        setPickInfo(null);
     }, [bestStorageKey]);
 
     useEffect(() => {
@@ -282,6 +371,7 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
     }, [cursoId, persistOk]);
 
     useEffect(() => {
+        setPickInfo(null);
         const mount = mountRef.current;
         if (!mount) return undefined;
 
@@ -294,10 +384,19 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
         let camera = null;
         const clock = new THREE.Clock();
         const raycaster = new THREE.Raycaster();
+        const pickNdc = new THREE.Vector2();
         const tmpV = new THREE.Vector3();
         const tmpV2 = new THREE.Vector3();
         const cameraTarget = new THREE.Vector3();
         const lookTarget = new THREE.Vector3();
+        const smoothFollow = new THREE.Vector3();
+        const camQuatPrev = new THREE.Quaternion();
+        const camQuatGoal = new THREE.Quaternion();
+        let camFollowInited = false;
+        let snapCamOnce = false;
+        let smoothCamRotY = 0;
+        let smoothCamDist = CAMERA_DIST;
+        let smoothFov = CAMERA_BASE_FOV;
         const carBox = new THREE.Box3();
 
         const keys = {
@@ -305,7 +404,6 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
             s: false,
             a: false,
             d: false,
-            space: false,
             shift: false,
         };
         let jumpQueued = false;
@@ -315,10 +413,6 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
         let groundMeshes = [];
         /** @type {{ mesh: THREE.Mesh; box: THREE.Box3 }[]} */
         let mapObstacles = [];
-        /** @type {THREE.Group | null} */
-        let collisionDebugRoot = null;
-        let collisionDebugBuilt = false;
-        let showCollisionDebug = false;
         const worldBounds = new THREE.Box3();
         let mapLoaded = false;
 
@@ -334,14 +428,12 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
         let grounded = true;
         let turboParticles = null;
         let impactParticles = null;
-        let lastEngineBeep = 0;
         let audioCtx = null;
 
         let turboTank = MAX_TURBO_TIME;
         let turboCooldown = 0;
         let turboActive = false;
 
-        let cameraShake = 0;
         let targetFov = CAMERA_BASE_FOV;
         let targetCamDist = CAMERA_DIST;
 
@@ -361,6 +453,8 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
         let leftZoneAfterArm = false;
         let raceTimeSec = 0;
         let finishLineBurst = 0;
+        /** Tras ENTER: no aplicar frenado por choque (evita quedar atrapado en geometría del spawn). */
+        let raceCollisionGrace = 0;
 
         const finishRace = (finalTime) => {
             lapCompleted = true;
@@ -495,21 +589,12 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
             }
         }
 
-        const syncCollisionDebugHelpers = () => {
-            if (!collisionDebugRoot) return;
-            collisionDebugRoot.visible = showCollisionDebug;
-            if (!showCollisionDebug || collisionDebugBuilt) return;
-            for (const o of mapObstacles) {
-                collisionDebugRoot.add(new THREE.Box3Helper(o.box, 0xff2200));
-            }
-            collisionDebugBuilt = true;
-        };
-
         const onKeyDown = (e) => {
-            if (e.code === "KeyB" && modelsReady && mapObstacles.length) {
+            if (e.code === "Space" && !e.repeat) {
                 e.preventDefault();
-                showCollisionDebug = !showCollisionDebug;
-                syncCollisionDebugHelpers();
+                if (modelsReady && raceStarted && !lapCompleted) {
+                    jumpQueued = true;
+                }
                 return;
             }
             if (e.code === "Enter" && modelsReady && !doneRef.current && !lapCompleted) {
@@ -520,6 +605,7 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
                     lapCompleted = false;
                     leftZoneAfterArm = startLine ? !estaEnMeta({ x: carGroup.position.x, z: carGroup.position.z }, startLine) : true;
                     raceTimeSec = 0;
+                    raceCollisionGrace = 0.85;
                     turboTank = MAX_TURBO_TIME;
                     turboCooldown = 0;
                     if (startMat) startMat.color.setHex(0x22ee99);
@@ -547,12 +633,6 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
                     break;
                 case "KeyD":
                     keys.d = true;
-                    break;
-                case "Space":
-                    if (!e.repeat) {
-                        e.preventDefault();
-                        jumpQueued = true;
-                    }
                     break;
                 case "ShiftLeft":
                 case "ShiftRight":
@@ -586,54 +666,19 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
             }
         };
 
-        function playEngine(delta, speed, turbo) {
-            if (!raceStarted || lapCompleted) return;
-            const now = performance.now() / 1000;
-            if (now - lastEngineBeep < 0.12) return;
-            lastEngineBeep = now;
-            try {
-                const Ctx = window.AudioContext ?? window.webkitAudioContext;
-                if (!Ctx) return;
-                if (!audioCtx) audioCtx = new Ctx();
-                if (audioCtx.state === "suspended") void audioCtx.resume();
-                const o = audioCtx.createOscillator();
-                const g = audioCtx.createGain();
-                o.type = "triangle";
-                const sp = Math.min(1, Math.abs(speed) / MAX_SPEED);
-                o.frequency.value = 70 + sp * 130 + (turbo ? 70 : 0);
-                g.gain.value = 0.011 + sp * 0.032;
-                o.connect(g);
-                g.connect(audioCtx.destination);
-                o.start();
-                o.stop(audioCtx.currentTime + Math.min(0.07, delta * 2));
-            } catch {
-                /* noop */
-            }
-        }
-
         /**
+         * Altura del suelo bajo (x,z), o `null` si no hay mesh (fuera del mapa / vacío).
          * @param {number} x
          * @param {number} z
          * @param {number} yGuess
+         * @returns {number | null}
          */
         function sampleGroundY(x, z, yGuess) {
-            if (!groundMeshes.length) return yGuess;
+            if (!groundMeshes.length) return null;
             raycaster.set(new THREE.Vector3(x, yGuess + GROUND_RAY_UP, z), new THREE.Vector3(0, -1, 0));
             const hits = raycaster.intersectObjects(groundMeshes, true);
-            if (!hits.length) return yGuess;
+            if (!hits.length) return null;
             return hits[0].point.y;
-        }
-
-        function clampToArea(x, z) {
-            if (worldBounds.isEmpty()) return { x, z };
-            const minX = worldBounds.min.x + AREA_MARGIN;
-            const maxX = worldBounds.max.x - AREA_MARGIN;
-            const minZ = worldBounds.min.z + AREA_MARGIN;
-            const maxZ = worldBounds.max.z - AREA_MARGIN;
-            return {
-                x: Math.max(minX, Math.min(maxX, x)),
-                z: Math.max(minZ, Math.min(maxZ, z)),
-            };
         }
 
         function createTurboBurst(parent) {
@@ -755,7 +800,8 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
 
         function buildStartLineVisual(line) {
             if (!scene) return;
-            const gy = sampleGroundY(line.x, line.z, worldBounds.max.y + 2);
+            const g0 = sampleGroundY(line.x, line.z, worldBounds.max.y + 2);
+            const gy = g0 ?? worldBounds.min.y;
             const y = gy + 0.12;
             const g = new THREE.Group();
             const matFrame = new THREE.LineBasicMaterial({ color: 0x33ffcc });
@@ -795,15 +841,11 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
 
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0x060810);
-        scene.fog = new THREE.Fog(0x060810, 45, 220);
-        collisionDebugRoot = new THREE.Group();
-        collisionDebugRoot.name = "cars-collision-debug";
-        collisionDebugRoot.visible = false;
-        scene.add(collisionDebugRoot);
+        scene.fog = new THREE.Fog(0x060810, 120, 2800);
 
         const w = mount.clientWidth || 640;
         const h = mount.clientHeight || 400;
-        camera = new THREE.PerspectiveCamera(CAMERA_BASE_FOV, w / h, 0.1, 500);
+        camera = new THREE.PerspectiveCamera(CAMERA_BASE_FOV, w / h, 0.1, 12000);
         renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.setSize(w, h);
@@ -811,6 +853,67 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.domElement.tabIndex = 0;
         mount.appendChild(renderer.domElement);
+
+        /** @type {((e: PointerEvent) => void) | null} */
+        let onPickModel = null;
+        if (preview) {
+            onPickModel = (e) => {
+                if (!renderer || !camera) return;
+                const rect = renderer.domElement.getBoundingClientRect();
+                const rw = rect.width || 1;
+                const rh = rect.height || 1;
+                pickNdc.x = ((e.clientX - rect.left) / rw) * 2 - 1;
+                pickNdc.y = -((e.clientY - rect.top) / rh) * 2 + 1;
+                raycaster.setFromCamera(pickNdc, camera);
+                /** @type {THREE.Object3D | null} */
+                let picked = null;
+                let origen = "";
+                if (carVisual) {
+                    const hc = raycaster.intersectObject(carVisual, true);
+                    if (hc.length) {
+                        picked = hc[0].object;
+                        origen = "Vehículo (auto.glb)";
+                    }
+                }
+                if (!picked && mapRoot) {
+                    const hm = raycaster.intersectObject(mapRoot, true);
+                    if (hm.length) {
+                        picked = hm[0].object;
+                        origen = "Mapa (mapa.glb)";
+                    }
+                }
+                if (!picked) {
+                    setPickInfo({
+                        mesh: "—",
+                        ruta: "Nada bajo el cursor. Prueba sobre el coche o el mapa.",
+                        origen: "—",
+                        tipo: "—",
+                    });
+                    return;
+                }
+                const partes = [];
+                let n = picked;
+                while (n) {
+                    const label = n.name?.trim() || "";
+                    if (label) partes.push(label);
+                    if (n === mapRoot || n === carGroup) break;
+                    n = n.parent;
+                }
+                const tipo = picked.type || "?";
+                const meshName =
+                    picked.type === "Mesh"
+                        ? picked.name?.trim() || "(mesh sin nombre)"
+                        : `${picked.type}: ${picked.name?.trim() || "—"}`;
+                setPickInfo({
+                    mesh: meshName,
+                    ruta: partes.length ? partes.join(" → ") : "(sin nombres en la jerarquía)",
+                    origen,
+                    tipo,
+                });
+            };
+            renderer.domElement.style.cursor = "crosshair";
+            renderer.domElement.addEventListener("pointerdown", onPickModel);
+        }
 
         const hemi = new THREE.HemisphereLight(0xaaccff, 0x334422, 0.55);
         scene.add(hemi);
@@ -864,22 +967,7 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
                 groundMeshes = collectMeshes(mapRoot);
                 worldBounds.makeEmpty();
                 expandBox(mapRoot, worldBounds);
-                mapObstacles = buildMapObstacles(mapRoot, worldBounds);
-                collisionDebugBuilt = false;
-                if (collisionDebugRoot) {
-                    while (collisionDebugRoot.children.length) {
-                        const ch = collisionDebugRoot.children[0];
-                        collisionDebugRoot.remove(ch);
-                        ch.traverse((o) => {
-                            if (o.geometry) o.geometry.dispose();
-                            if (o.material) {
-                                const m = o.material;
-                                if (Array.isArray(m)) m.forEach((x) => x.dispose());
-                                else m.dispose();
-                            }
-                        });
-                    }
-                }
+                mapObstacles = MAP_MESH_COLLISIONS ? buildMapObstacles(mapRoot, worldBounds) : [];
                 mapRoot.traverse((o) => {
                     if (o.isMesh) {
                         o.castShadow = true;
@@ -936,7 +1024,8 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
             const cx = (worldBounds.min.x + worldBounds.max.x) * 0.5;
             const cz = (worldBounds.min.z + worldBounds.max.z) * 0.5;
             const guessY = worldBounds.max.y + 5;
-            const gy = sampleGroundY(cx, cz, guessY);
+            const g0 = sampleGroundY(cx, cz, guessY);
+            const gy = g0 ?? worldBounds.min.y + 2;
             startLine = { x: cx, z: cz, width: 10, depth: 10 };
             carGroup.position.set(cx, gy + carRideY + 0.15, cz);
             rotY = 0;
@@ -990,6 +1079,7 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
 
             if (scene && camera && renderer && carGroup && mapLoaded && carLoaded && !worldBounds.isEmpty() && startLine) {
                 const inputActive = raceStarted && !lapCompleted;
+                if (raceCollisionGrace > 0) raceCollisionGrace = Math.max(0, raceCollisionGrace - dt);
 
                 const prevCd = turboCooldown;
                 turboCooldown = Math.max(0, turboCooldown - dt);
@@ -1039,46 +1129,50 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
                     carGroup.position.addScaledVector(tmpV, forwardSpeed * dt);
                 }
 
-                const cxz = clampToArea(carGroup.position.x, carGroup.position.z);
-                carGroup.position.x = cxz.x;
-                carGroup.position.z = cxz.z;
-
                 carGroup.updateMatrixWorld(true);
-                carBox.setFromObject(carGroup);
-                carBox.expandByScalar(CAR_BOX_PAD);
 
-                let hitImpulse = false;
-                let hitFx = 0;
-                let hitFz = 0;
-                const runCollisions = raceStarted && !lapCompleted && (inputActive || Math.abs(forwardSpeed) > 0.04);
-                if (mapObstacles.length && runCollisions) {
-                    for (let it = 0; it < COLLISION_ITERS; it++) {
-                        let moved = false;
-                        for (let i = 0; i < mapObstacles.length; i++) {
-                            const ob = mapObstacles[i];
-                            if (!carBox.intersectsBox(ob.box)) continue;
-                            const before = carGroup.position.x;
-                            const beforeZ = carGroup.position.z;
-                            pushOutCarAABB(carBox, ob.box, carGroup.position);
-                            const dx = carGroup.position.x - before;
-                            const dz = carGroup.position.z - beforeZ;
-                            hitFx += dx;
-                            hitFz += dz;
-                            carGroup.updateMatrixWorld(true);
-                            carBox.setFromObject(carGroup);
-                            carBox.expandByScalar(CAR_BOX_PAD);
-                            moved = true;
-                            hitImpulse = true;
+                if (MAP_MESH_COLLISIONS && mapObstacles.length > 0) {
+                    setOrientedCarColliderBox(carBox, carGroup.position, rotY);
+                    let hitImpulse = false;
+                    let hitFx = 0;
+                    let hitFz = 0;
+                    const runCollisions =
+                        raceStarted && !lapCompleted && (inputActive || Math.abs(forwardSpeed) > 0.04);
+                    const gyc = sampleGroundY(
+                        carGroup.position.x,
+                        carGroup.position.z,
+                        carGroup.position.y + GROUND_RAY_UP,
+                    );
+                    const groundYAtCar =
+                        gyc ?? (worldBounds.isEmpty() ? carGroup.position.y - carRideY : worldBounds.min.y);
+                    if (runCollisions) {
+                        for (let it = 0; it < COLLISION_ITERS; it++) {
+                            let moved = false;
+                            for (let i = 0; i < mapObstacles.length; i++) {
+                                const ob = mapObstacles[i];
+                                if (!obstacleBlocksCarXZ(ob.box, groundYAtCar)) continue;
+                                if (!carBox.intersectsBox(ob.box)) continue;
+                                const before = carGroup.position.x;
+                                const beforeZ = carGroup.position.z;
+                                pushOutCarAABB(carBox, ob.box, carGroup.position);
+                                const dx = carGroup.position.x - before;
+                                const dz = carGroup.position.z - beforeZ;
+                                hitFx += dx;
+                                hitFz += dz;
+                                carGroup.updateMatrixWorld(true);
+                                setOrientedCarColliderBox(carBox, carGroup.position, rotY);
+                                moved = true;
+                                hitImpulse = true;
+                            }
+                            if (!moved) break;
                         }
-                        if (!moved) break;
-                    }
-                    if (hitImpulse) {
-                        forwardSpeed *= 0.36;
-                        cameraShake = Math.min(0.85, cameraShake + 0.42);
-                        if (impactCd <= 0) {
-                            impactCd = IMPACT_CD;
-                            playImpact();
-                            burstImpactParticles(carGroup.position, hitFx, hitFz);
+                        if (hitImpulse && raceCollisionGrace <= 0) {
+                            forwardSpeed *= 0.62;
+                            if (impactCd <= 0) {
+                                impactCd = IMPACT_CD;
+                                playImpact();
+                                burstImpactParticles(carGroup.position, hitFx, hitFz);
+                            }
                         }
                     }
                 }
@@ -1087,12 +1181,16 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
                 carGroup.position.y += vy * dt;
 
                 const gy = sampleGroundY(carGroup.position.x, carGroup.position.z, carGroup.position.y);
-                const ride = gy + carRideY + GROUND_EPS;
-                grounded = carGroup.position.y <= ride + 0.12 && vy <= 0.5;
-                if (carGroup.position.y < ride) {
-                    carGroup.position.y = ride;
-                    vy = Math.max(0, vy * -0.12);
-                    grounded = true;
+                if (gy !== null) {
+                    const ride = gy + carRideY + GROUND_EPS;
+                    grounded = carGroup.position.y <= ride + 0.12 && vy <= 0.5;
+                    if (carGroup.position.y < ride) {
+                        carGroup.position.y = ride;
+                        vy = Math.max(0, vy * -0.12);
+                        grounded = true;
+                    }
+                } else {
+                    grounded = false;
                 }
                 if (grounded && jumpQueued && inputActive) {
                     vy = JUMP_V;
@@ -1106,8 +1204,6 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
                 tmpV2.copy(tmpV).multiplyScalar(-1);
                 updateTurboParticles(turboParticles, dt, carGroup.position, tmpV2, turbo);
                 updateImpactParticles(impactParticles, dt);
-
-                if (inputActive && (Math.abs(forwardSpeed) > 0.32 || turbo)) playEngine(dt, forwardSpeed, turbo);
 
                 carVisual?.traverse((o) => {
                     if (o.userData.isWheel && inputActive) {
@@ -1142,29 +1238,54 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
                     CAMERA_BASE_FOV +
                     speedFovBlend * CAMERA_SPEED_FOV_MAX +
                     (turbo ? CAMERA_TURBO_FOV_BOOST : 0);
-                camera.fov += (targetFov - camera.fov) * Math.min(1, dt * 5.5);
+                smoothFov += (targetFov - smoothFov) * (1 - Math.exp(-3.8 * dt));
+                camera.fov = smoothFov;
                 targetCamDist =
                     CAMERA_DIST +
                     speedFovBlend * CAMERA_DIST_SPEED_EXTRA +
                     (turbo ? CAMERA_DIST_TURBO_EXTRA : 0);
+                smoothCamDist += (targetCamDist - smoothCamDist) * (1 - Math.exp(-4.2 * dt));
 
-                tmpV.set(Math.sin(rotY), 0, Math.cos(rotY));
-                cameraTarget.copy(carGroup.position);
-                cameraTarget.addScaledVector(tmpV, -targetCamDist);
+                if (!camFollowInited) {
+                    smoothFollow.copy(carGroup.position);
+                    smoothCamRotY = rotY;
+                    camFollowInited = true;
+                    snapCamOnce = true;
+                } else {
+                    const posK = 1 - Math.exp(-10 * dt);
+                    smoothFollow.lerp(carGroup.position, posK);
+                    let dr = rotY - smoothCamRotY;
+                    while (dr > Math.PI) dr -= Math.PI * 2;
+                    while (dr < -Math.PI) dr += Math.PI * 2;
+                    smoothCamRotY += dr * (1 - Math.exp(-8 * dt));
+                }
+
+                tmpV.set(Math.sin(smoothCamRotY), 0, Math.cos(smoothCamRotY));
+                cameraTarget.copy(smoothFollow);
+                cameraTarget.addScaledVector(tmpV, -smoothCamDist);
                 cameraTarget.y += CAMERA_HEIGHT;
-                camera.position.lerp(cameraTarget, CAMERA_LERP);
+                lookTarget.copy(smoothFollow);
+                lookTarget.addScaledVector(tmpV, 2.8);
+                lookTarget.y += carRideY * 0.35;
 
-                if (cameraShake > 0.001) {
-                    cameraShake = Math.max(0, cameraShake - dt * 2.4);
-                    camera.position.x += (Math.random() - 0.5) * 0.45 * cameraShake;
-                    camera.position.y += (Math.random() - 0.5) * 0.25 * cameraShake;
-                    camera.position.z += (Math.random() - 0.5) * 0.45 * cameraShake;
+                const posCamK = 1 - Math.exp(-CAMERA_POS_SMOOTH * dt);
+                const lookK = 1 - Math.exp(-12 * dt);
+                if (snapCamOnce) {
+                    camera.position.copy(cameraTarget);
+                    camera.up.set(0, 1, 0);
+                    camera.lookAt(lookTarget);
+                    snapCamOnce = false;
+                } else {
+                    camera.position.lerp(cameraTarget, posCamK);
+                    camQuatPrev.copy(camera.quaternion);
+                    camera.up.set(0, 1, 0);
+                    camera.lookAt(lookTarget);
+                    camQuatGoal.copy(camera.quaternion);
+                    camera.quaternion.copy(camQuatPrev);
+                    camera.quaternion.slerp(camQuatGoal, lookK);
                 }
 
                 camera.updateProjectionMatrix();
-                lookTarget.copy(carGroup.position);
-                lookTarget.y += carRideY * 0.35;
-                camera.lookAt(lookTarget);
 
                 const turboPct = Math.round((turboTank / MAX_TURBO_TIME) * 100);
                 let turboInfo = `${turboPct}%`;
@@ -1185,8 +1306,6 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
                     }));
                 }
             }
-
-            if (collisionDebugRoot?.visible) collisionDebugRoot.updateMatrixWorld(true);
 
             if (scene && camera && renderer) renderer.render(scene, camera);
         };
@@ -1209,6 +1328,10 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
             window.removeEventListener("keyup", onKeyUp);
             cancelAnimationFrame(raf);
             if (renderer) {
+                if (onPickModel) {
+                    renderer.domElement.removeEventListener("pointerdown", onPickModel);
+                    renderer.domElement.style.cursor = "";
+                }
                 renderer.dispose();
                 if (renderer.domElement?.parentNode === mount) mount.removeChild(renderer.domElement);
             }
@@ -1228,17 +1351,6 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
             if (startLineGroup) {
                 scene?.remove(startLineGroup);
                 startLineGroup.traverse((o) => {
-                    if (o.geometry) o.geometry.dispose();
-                    if (o.material) {
-                        const m = o.material;
-                        if (Array.isArray(m)) m.forEach((x) => x.dispose());
-                        else m.dispose();
-                    }
-                });
-            }
-            if (collisionDebugRoot) {
-                scene?.remove(collisionDebugRoot);
-                collisionDebugRoot.traverse((o) => {
                     if (o.geometry) o.geometry.dispose();
                     if (o.material) {
                         const m = o.material;
@@ -1292,7 +1404,7 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
                 <div className="absolute inset-0 z-[35] flex flex-col items-center justify-center bg-black/72 px-4 text-center backdrop-blur-sm">
                     <p className="text-lg font-semibold text-white md:text-xl">Presiona ENTER para comenzar</p>
                     <p className="mt-2 max-w-sm text-xs text-slate-400">
-                        WASD · espacio · Shift turbo · vuelta (doble meta) · tecla B para ver colisiones del .glb
+                        WASD · <strong className="text-sky-300">ESPACIO</strong> para saltar · Shift turbo · cruza la meta dos veces para completar la vuelta
                     </p>
                 </div>
             )}
@@ -1340,9 +1452,36 @@ export default function CarsGame({ preview = false, cursoId = 0, onCompletado })
                     </div>
                     <div className="pointer-events-none absolute bottom-3 left-3 z-20 max-w-md rounded border border-white/10 bg-black/60 px-3 py-2 text-[10px] text-slate-400 backdrop-blur-sm">
                         {preview
-                            ? "Vista previa · B = ver cajas de colisión"
-                            : "ENTER · SHIFT · B = debug colisiones (Box3Helper)"}
+                            ? "Vista previa · clic en el modelo para identificar piezas · ENTER · WASD · ESPACIO · SHIFT"
+                            : "ENTER inicio · WASD · ESPACIO saltar · SHIFT turbo"}
                     </div>
+                    {preview && (
+                        <div className="pointer-events-none absolute bottom-3 right-3 z-[24] max-w-sm rounded-lg border border-cyan-500/35 bg-slate-950/90 px-3 py-2 text-left shadow-lg backdrop-blur-md">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-cyan-300/90">
+                                Identificar parte del modelo
+                            </p>
+                            <p className="mt-1 text-[10px] leading-relaxed text-slate-400">
+                                Haz clic sobre el vehículo o el mapa (cursor cruz). Verás el nombre del mesh en el GLB.
+                            </p>
+                            {pickInfo && (
+                                <div className="mt-2 space-y-1 border-t border-white/10 pt-2 text-[10px] text-slate-200">
+                                    <p>
+                                        <span className="text-slate-500">Origen:</span> {pickInfo.origen}
+                                    </p>
+                                    <p>
+                                        <span className="text-slate-500">Pieza:</span>{" "}
+                                        <span className="font-mono text-cyan-200">{pickInfo.mesh}</span>
+                                    </p>
+                                    <p>
+                                        <span className="text-slate-500">Tipo:</span> {pickInfo.tipo}
+                                    </p>
+                                    <p className="break-words text-slate-400">
+                                        <span className="text-slate-500">Jerarquía:</span> {pickInfo.ruta}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </>
             )}
 
