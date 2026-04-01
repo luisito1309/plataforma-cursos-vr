@@ -10,6 +10,7 @@ import MiniJuegoProgreso from "@/components/MiniJuegoProgreso";
 import CreativeBox from "@/components/CreativeBox";
 import GamesFPS from "@/components/GamesFPS";
 import CarsGame from "@/components/CarsGame";
+import PCBuilder3D from "@/games/PCBuilder3D";
 import { MinijuegoFullscreenToggleButton } from "@/components/MinijuegoFullscreenControls";
 import {
     eduBadgeEyebrow,
@@ -56,6 +57,7 @@ const MINI_JUEGOS: MiniJuegoOption[] = [
     { value: "anatomia_humana", label: "Anatomía humana 3D", icon: <ScanLine size={14} />, tag: "3D" },
     { value: "konterball", label: "Konterball (VR web)", icon: <Glasses size={14} />, tag: "VR" },
     { value: "computer_3d", label: "Computer 3D", icon: <Cpu size={14} />, tag: "3D" },
+    { value: "pc_builder_3d", label: "PC Builder 3D", icon: <Cpu size={14} />, tag: "3D" },
     { value: "creative_box", label: "Creative Box", icon: <Box size={14} />, tag: "VOX" },
     { value: "games_fps", label: "Games FPS", icon: <Crosshair size={14} />, tag: "FPS" },
     { value: "cars", label: "Cars", icon: <Car size={14} />, tag: "3D" },
@@ -83,7 +85,7 @@ function miniJuegosPorCategoria(cat: Categoria): MiniJuegoOption[] {
         case "medicina":
             return pick(["quiz_medico", "anatomia_humana"]);
         case "tecnologia":
-            return pick(["", "computer_3d"]);
+            return pick(["", "computer_3d", "pc_builder_3d"]);
         case "creativo":
             return pick(["creative_box", "games_fps", "cars"]);
         default:
@@ -482,6 +484,21 @@ export default function Cursos() {
                                 </PreviaMinijuegoConFullscreen>
                             )}
 
+                            {miniJuego === "pc_builder_3d" && (
+                                <PreviaMinijuegoConFullscreen
+                                    titulo="Vista previa — PC Builder 3D"
+                                    wrapStyle={{
+                                        marginTop: 24,
+                                        padding: "16px",
+                                        background: "rgb(15 23 42 / 0.75)",
+                                        borderRadius: 16,
+                                        border: "1px solid rgba(255,255,255,.1)",
+                                    }}
+                                >
+                                    <PCBuilder3D preview />
+                                </PreviaMinijuegoConFullscreen>
+                            )}
+
                             {miniJuego === "creative_box" && (
                                 <PreviaMinijuegoConFullscreen
                                     titulo="Vista previa — Creative Box (voxel)"
@@ -568,7 +585,9 @@ export default function Cursos() {
                                 return (
                                     <article key={`${curso.id}-${curso.titulo}`} className={eduCourseCard}>
                                         <div className={eduCourseImageBg}>
-                                            {curso.imagen ? (
+                                            {curso.mini_juego === "pc_builder_3d" ? (
+                                                <PCBuilder3D preview />
+                                            ) : curso.imagen ? (
                                                 <img src={`/storage/${curso.imagen}`} alt={curso.titulo} className="h-full w-full object-cover" />
                                             ) : (
                                                 <div className="flex h-full items-center justify-center">

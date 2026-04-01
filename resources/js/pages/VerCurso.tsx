@@ -22,6 +22,7 @@ import MiniJuegoProgreso from "@/components/MiniJuegoProgreso";
 import CreativeBox from "@/components/CreativeBox";
 import GamesFPS from "@/components/GamesFPS";
 import CarsGame from "@/components/CarsGame";
+import PCBuilder3D from "@/games/PCBuilder3D";
 import {
     MinijuegoFullscreenToggleButton,
     minijuegoTienePantallaCompleta,
@@ -36,7 +37,7 @@ import {
 interface Video { id: number; titulo: string; url: string; modulo_id: number; }
 interface Documento { id: number; modulo_id: number; titulo: string; archivo: string; }
 interface Modulo { id: number; titulo: string; curso_id: number; videos: Video[]; documentos?: Documento[]; }
-interface Curso { id: number; titulo: string; descripcion: string; imagen?: string; docente_id: number; estado: string; mini_juego?: string | null; categoria?: string | null; }
+interface Curso { id: number; titulo: string; descripcion: string; imagen?: string; docente_id: number; estado: string; mini_juego?: string | null; tipo?: string | null; categoria?: string | null; }
 
 // ─── Catálogo de mini juegos ──────────────────────────────────────────────────
 // Para agregar un juego nuevo en el futuro, solo añade una entrada aquí.
@@ -75,6 +76,11 @@ const MINI_JUEGOS_INFO: Record<string, { label: string; tag: string; icon: React
     },
     computer_3d: {
         label: "Computer 3D",
+        tag: "3D",
+        icon: <Cpu size={14} />,
+    },
+    pc_builder_3d: {
+        label: "PC Builder 3D",
         tag: "3D",
         icon: <Cpu size={14} />,
     },
@@ -143,27 +149,28 @@ export default function VerCurso({ id }: { id: number }) {
     const [modalDocumento, setModalDocumento] = useState<{ modulo_id: number } | null>(null);
     const [formDocumento, setFormDocumento] = useState({ titulo: "", archivo: null as File | null });
     const miniJuegoCardRef = useRef<HTMLDivElement>(null);
+    const miniJuegoCurso = curso?.mini_juego || curso?.tipo || null;
 
     useEffect(() => { cargarCurso(); }, []);
     useEffect(() => { if (videoRef.current) videoRef.current.load(); }, [videoActivo?.url]);
 
     useEffect(() => {
-        if (!curso?.mini_juego || !miniJuegoTieneProgresoLocal(curso.mini_juego)) {
+        if (!miniJuegoCurso || !miniJuegoTieneProgresoLocal(miniJuegoCurso)) {
             setMiniJuegoLocalListo(false);
             return;
         }
-        setMiniJuegoLocalListo(isMinijuegoOk(curso.id, curso.mini_juego));
-    }, [curso?.id, curso?.mini_juego]);
+        setMiniJuegoLocalListo(isMinijuegoOk(curso.id, miniJuegoCurso));
+    }, [curso?.id, miniJuegoCurso]);
 
     useEffect(() => {
         const fn = (e: Event) => {
             const ev = e as CustomEvent<{ cursoId: number; juego: string }>;
-            if (!curso?.id || !curso.mini_juego) return;
-            if (ev.detail?.cursoId === curso.id && ev.detail?.juego === curso.mini_juego) setMiniJuegoLocalListo(true);
+            if (!curso?.id || !miniJuegoCurso) return;
+            if (ev.detail?.cursoId === curso.id && ev.detail?.juego === miniJuegoCurso) setMiniJuegoLocalListo(true);
         };
         window.addEventListener("edu-minijuego-ok", fn);
         return () => window.removeEventListener("edu-minijuego-ok", fn);
-    }, [curso?.id, curso?.mini_juego]);
+    }, [curso?.id, miniJuegoCurso]);
 
     const cargarCurso = () => {
         setLoading(true);
@@ -178,8 +185,9 @@ export default function VerCurso({ id }: { id: number }) {
                     if (!videoActivo && mods[0].videos?.length > 0) setVideoActivo(mods[0].videos[0]);
                 }
                 // Seleccionar automáticamente el juego del curso al cargar
-                if (cursoData.mini_juego && MINI_JUEGOS_INFO[cursoData.mini_juego]) {
-                    setJuegoSeleccionado(cursoData.mini_juego);
+                const juegoCurso = cursoData.mini_juego || cursoData.tipo || null;
+                if (juegoCurso && MINI_JUEGOS_INFO[juegoCurso]) {
+                    setJuegoSeleccionado(juegoCurso);
                 }
             })
             .catch(console.error)
@@ -248,8 +256,8 @@ export default function VerCurso({ id }: { id: number }) {
     };
 
     // Juegos disponibles para este curso (por ahora solo el asignado, en el futuro podría ser lista)
-    const juegosDisponibles = curso?.mini_juego && MINI_JUEGOS_INFO[curso.mini_juego]
-        ? [curso.mini_juego]
+    const juegosDisponibles = miniJuegoCurso && MINI_JUEGOS_INFO[miniJuegoCurso]
+        ? [miniJuegoCurso]
         : [];
 
     // ── Loading ──────────────────────────────────────────────────────────────
@@ -427,8 +435,8 @@ export default function VerCurso({ id }: { id: number }) {
                                     icon: null,
                                     label:
                                         miniJuegoLocalListo &&
-                                            curso.mini_juego &&
-                                            miniJuegoTieneProgresoLocal(curso.mini_juego)
+                                            miniJuegoCurso &&
+                                            miniJuegoTieneProgresoLocal(miniJuegoCurso)
                                             ? "Completado"
                                             : curso.estado,
                                     green: true,
@@ -682,7 +690,7 @@ export default function VerCurso({ id }: { id: number }) {
                                 <div style={{ height: 1, background: "linear-gradient(to right, rgba(34,211,238,.2), transparent)", marginTop: 20 }} />
                             </div>
 
-                            {curso.mini_juego === "games_fps" && miniJuegoLocalListo && (
+                            {miniJuegoCurso === "games_fps" && miniJuegoLocalListo && (
                                 <div
                                     className="mb-6 rounded-xl border border-emerald-500/35 bg-emerald-500/[0.09] px-4 py-3 text-center dark:border-emerald-500/30 dark:bg-emerald-950/40"
                                     role="status"
@@ -696,7 +704,7 @@ export default function VerCurso({ id }: { id: number }) {
                                 </div>
                             )}
 
-                            {curso.mini_juego === "cars" && miniJuegoLocalListo && (
+                            {miniJuegoCurso === "cars" && miniJuegoLocalListo && (
                                 <div
                                     className="mb-6 rounded-xl border border-emerald-500/35 bg-emerald-500/[0.09] px-4 py-3 text-center dark:border-emerald-500/30 dark:bg-emerald-950/40"
                                     role="status"
@@ -854,6 +862,10 @@ export default function VerCurso({ id }: { id: number }) {
                                                         cursoId={id}
                                                         onCompletado={() => setMiniJuegoLocalListo(true)}
                                                     />
+                                                </div>
+                                            ) : juegoSeleccionado === "pc_builder_3d" ? (
+                                                <div style={{ padding: 24, background: "#14151c" }}>
+                                                    <PCBuilder3D />
                                                 </div>
                                             ) : juegoSeleccionado === "games_fps" ? (
                                                 <div style={{ padding: 24, background: "#0a0e14" }}>
