@@ -11,6 +11,7 @@ import CreativeBox from "@/components/CreativeBox";
 import GamesFPS from "@/components/GamesFPS";
 import CarsGame from "@/components/CarsGame";
 import PCBuilder3D from "@/games/PCBuilder3D";
+import VRMovimientos from "@/games/VRMovimientos";
 import { MinijuegoFullscreenToggleButton } from "@/components/MinijuegoFullscreenControls";
 import {
     eduBadgeEyebrow,
@@ -58,6 +59,7 @@ const MINI_JUEGOS: MiniJuegoOption[] = [
     { value: "konterball", label: "Konterball (VR web)", icon: <Glasses size={14} />, tag: "VR" },
     { value: "computer_3d", label: "Computer 3D", icon: <Cpu size={14} />, tag: "3D" },
     { value: "pc_builder_3d", label: "PC Builder 3D", icon: <Cpu size={14} />, tag: "3D" },
+    { value: "movimientos", label: "Movimientos (VR)", icon: <Glasses size={14} />, tag: "VR" },
     { value: "creative_box", label: "Creative Box", icon: <Box size={14} />, tag: "VOX" },
     { value: "games_fps", label: "Games FPS", icon: <Crosshair size={14} />, tag: "FPS" },
     { value: "cars", label: "Cars", icon: <Car size={14} />, tag: "3D" },
@@ -67,13 +69,14 @@ const MINI_JUEGOS: MiniJuegoOption[] = [
     // { value: "quiz_3d",     label: "Quiz Interactivo",   icon: <Zap      size={14} />, tag: "QUIZ" },
 ];
 
-type Categoria = "play" | "medicina" | "tecnologia" | "creativo";
+type Categoria = "play" | "medicina" | "tecnologia" | "creativo" | "vr";
 
 const CATEGORIA_LABELS: Record<Categoria, string> = {
     play: "Play",
     medicina: "Medicina",
     tecnologia: "Tecnología",
     creativo: "Creativo",
+    vr: "VR",
 };
 
 function miniJuegosPorCategoria(cat: Categoria): MiniJuegoOption[] {
@@ -88,6 +91,8 @@ function miniJuegosPorCategoria(cat: Categoria): MiniJuegoOption[] {
             return pick(["", "computer_3d", "pc_builder_3d"]);
         case "creativo":
             return pick(["creative_box", "games_fps", "cars"]);
+        case "vr":
+            return pick(["movimientos"]);
         default:
             return [];
     }
@@ -226,7 +231,7 @@ export default function Cursos() {
     const getJuego = (value: string) => MINI_JUEGOS.find(j => j.value === value);
 
     const etiquetaCategoria = (cat: string | null | undefined) => {
-        if (cat === "play" || cat === "medicina" || cat === "tecnologia" || cat === "creativo") return CATEGORIA_LABELS[cat];
+        if (cat === "play" || cat === "medicina" || cat === "tecnologia" || cat === "creativo" || cat === "vr") return CATEGORIA_LABELS[cat];
         return null;
     };
 
@@ -323,7 +328,7 @@ export default function Cursos() {
                             <div className="mb-5 flex flex-col gap-2">
                                 <label className={eduLabel}>Categoría</label>
                                 <div className="flex flex-wrap gap-2.5">
-                                    {(["play", "medicina", "tecnologia", "creativo"] as Categoria[]).map((c) => {
+                                    {(["play", "medicina", "tecnologia", "creativo", "vr"] as Categoria[]).map((c) => {
                                         const activa = categoria === c;
                                         return (
                                             <button
@@ -499,6 +504,21 @@ export default function Cursos() {
                                 </PreviaMinijuegoConFullscreen>
                             )}
 
+                            {miniJuego === "movimientos" && (
+                                <PreviaMinijuegoConFullscreen
+                                    titulo="Vista previa — Movimientos VR"
+                                    wrapStyle={{
+                                        marginTop: 24,
+                                        padding: "16px",
+                                        background: "rgb(15 23 42 / 0.75)",
+                                        borderRadius: 16,
+                                        border: "1px solid rgba(255,255,255,.1)",
+                                    }}
+                                >
+                                    <VRMovimientos preview />
+                                </PreviaMinijuegoConFullscreen>
+                            )}
+
                             {miniJuego === "creative_box" && (
                                 <PreviaMinijuegoConFullscreen
                                     titulo="Vista previa — Creative Box (voxel)"
@@ -587,6 +607,8 @@ export default function Cursos() {
                                         <div className={eduCourseImageBg}>
                                             {curso.mini_juego === "pc_builder_3d" ? (
                                                 <PCBuilder3D preview />
+                                            ) : curso.mini_juego === "movimientos" ? (
+                                                <VRMovimientos preview />
                                             ) : curso.imagen ? (
                                                 <img src={`/storage/${curso.imagen}`} alt={curso.titulo} className="h-full w-full object-cover" />
                                             ) : (

@@ -28,6 +28,7 @@ Route::get('/', function () {
                 'tecnologia' => 'Tecnología',
                 'creativo' => 'Creativo',
                 'play' => 'Play',
+                'vr' => 'VR',
                 default => ucfirst((string) $c->categoria),
             } : null,
         ])
@@ -49,6 +50,7 @@ Route::get('/', function () {
                 'tecnologia' => 'Tecnología',
                 'creativo' => 'Creativo',
                 'play' => 'Play',
+                'vr' => 'VR',
                 default => ucfirst($cat),
             },
             'icono' => match ($cat) {
@@ -56,6 +58,7 @@ Route::get('/', function () {
                 'tecnologia' => 'code',
                 'creativo' => 'palette',
                 'play' => 'globe',
+                'vr' => 'camera',
                 default => 'book',
             },
             'total_cursos' => (int) $row->total,
@@ -70,7 +73,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::get('/minijuego/{juego}', function (string $juego) {
-    $permitidos = ['quiz_medico', 'anatomia_humana', 'computer_3d', 'creative_box', 'games_fps', 'cars'];
+    $permitidos = ['quiz_medico', 'anatomia_humana', 'computer_3d', 'creative_box', 'games_fps', 'cars', 'movimientos'];
     if (! in_array($juego, $permitidos, true)) {
         abort(404);
     }

@@ -9,6 +9,7 @@ import Computer3D from '@/components/Computer3D';
 import CreativeBox from '@/components/CreativeBox';
 import GamesFPS from '@/components/GamesFPS';
 import CarsGame from '@/components/CarsGame';
+import VRMovimientos from '@/games/VRMovimientos';
 import { headerEnter, pageEnter, rm } from '@/lib/edu-motion';
 
 const TITLES: Record<string, string> = {
@@ -18,9 +19,10 @@ const TITLES: Record<string, string> = {
     creative_box: 'Creative Box',
     games_fps: 'Games FPS',
     cars: 'Cars',
+    movimientos: 'Movimientos VR',
 };
 
-const ALLOWED = new Set(['quiz_medico', 'anatomia_humana', 'computer_3d', 'creative_box', 'games_fps', 'cars']);
+const ALLOWED = new Set(['quiz_medico', 'anatomia_humana', 'computer_3d', 'creative_box', 'games_fps', 'cars', 'movimientos']);
 
 export default function MinijuegoDemo({ juego }: { juego: string }) {
     const fsRef = useRef<HTMLDivElement>(null);
@@ -105,6 +107,13 @@ export default function MinijuegoDemo({ juego }: { juego: string }) {
                         <div className="mx-auto w-full min-h-[70vh] max-w-6xl rounded-2xl border border-sky-500/20 bg-slate-950/90 p-2 shadow-lg shadow-sky-900/10 backdrop-blur-sm md:p-4">
                             <div className="h-[min(72vh,720px)] min-h-[420px] w-full">
                                 <CarsGame preview cursoId={0} />
+                            </div>
+                        </div>
+                    )}
+                    {juego === 'movimientos' && (
+                        <div className="mx-auto w-full min-h-[70vh] max-w-6xl rounded-2xl border border-cyan-500/20 bg-slate-950/90 p-2 shadow-lg shadow-cyan-900/10 backdrop-blur-sm md:p-4">
+                            <div className="h-[min(72vh,720px)] min-h-[420px] w-full">
+                                <VRMovimientos />
                             </div>
                         </div>
                     )}

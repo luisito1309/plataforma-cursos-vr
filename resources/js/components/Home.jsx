@@ -2,6 +2,7 @@ import { useRef, useCallback } from "react";
 import { Link, usePage, router } from "@inertiajs/react";
 import { motion, useInView, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { useParallaxLayer } from "@/hooks/use-edu-parallax";
+import PCBuilder3D from "@/games/PCBuilder3D";
 import {
     EASE_IN_OUT,
     EASE,
@@ -410,24 +411,14 @@ function VistaPreviaSection() {
                                         />
                                     </div>
                                 </motion.div>
-                                <motion.div variants={stagger} className="grid gap-6 p-8 md:grid-cols-3 md:p-10">
-                                    {[
-                                        { k: "Módulos", v: "12", sub: "organizados" },
-                                        { k: "VR / 3D", v: "4+", sub: "experiencias" },
-                                        { k: "Ritmo", v: "Tú", sub: "a tu paso" },
-                                    ].map((x) => (
-                                        <motion.div
-                                            key={x.k}
-                                            variants={childFadeUp}
-                                            whileHover={reduce ? {} : { scale: 1.05, boxShadow: "0 0 40px rgba(34,211,238,0.12)" }}
-                                            transition={{ duration: 0.32, ease: EASE_IN_OUT }}
-                                            className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur-md"
-                                        >
-                                            <p className="text-xs font-semibold uppercase tracking-wider text-cyan-400/80">{x.k}</p>
-                                            <p className="mt-2 font-mono text-3xl font-light text-white">{x.v}</p>
-                                            <p className="mt-1 text-sm text-slate-500">{x.sub}</p>
-                                        </motion.div>
-                                    ))}
+                                <motion.div variants={childFadeUp} className="p-6 md:p-8">
+                                    <div className="mb-3 flex items-center justify-between">
+                                        <p className="text-xs font-semibold uppercase tracking-wider text-cyan-400/80">PC Builder 3D preview</p>
+                                        <Link href="/cursos" className="text-xs font-semibold text-cyan-400 hover:text-cyan-300">
+                                            Ver cursos →
+                                        </Link>
+                                    </div>
+                                    <PCBuilder3D preview />
                                 </motion.div>
                             </motion.div>
                         </div>
@@ -519,7 +510,7 @@ function HomeNav({ auth, role, canRegister, onLogout }) {
             initial={{ y: -24, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.55, ease: EASE }}
-            className="sticky top-0 z-50 border-b border-white/5 bg-slate-950/75 backdrop-blur-2xl"
+            className="relative sticky top-0 z-50 border-b border-white/5 bg-slate-950/75 backdrop-blur-2xl"
         >
             <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4 md:px-10">
                 <Link href="/" className="flex items-center gap-2.5">
@@ -615,7 +606,7 @@ export default function Home({ canRegister = true, cursosDestacados = [], catego
 
     return (
         <div
-            className="dark min-h-screen scroll-smooth bg-slate-950 text-slate-100 antialiased selection:bg-cyan-500/30"
+            className="relative dark min-h-screen scroll-smooth bg-slate-950 text-slate-100 antialiased selection:bg-cyan-500/30"
             style={{ fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Instrument Sans', sans-serif" }}
         >
             <HomeNav auth={auth} role={role} canRegister={canRegister} onLogout={handleLogout} />

@@ -116,7 +116,7 @@ php artisan route:cache
 
 ### Sesiones y colas
 
-El `.env.example` usa `SESSION_DRIVER=database` y `QUEUE_CONNECTION=database`; tras migrar, las tablas de sesión/colas quedan disponibles si las usas.
+El `.env.example` usa `SESSION_DRIVER=database` y `QUEUE_CONNECTION=database`; tras migrar, las tablas de sesión/colas quedan disponibles si las usas.a
 
 ---
 

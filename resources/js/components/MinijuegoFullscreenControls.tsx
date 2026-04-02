@@ -6,6 +6,7 @@ export const MINIJUEGO_IDS_PANTALLA_COMPLETA = [
     "quiz_medico",
     "anatomia_humana",
     "computer_3d",
+    "movimientos",
     "creative_box",
     "games_fps",
     "cars",

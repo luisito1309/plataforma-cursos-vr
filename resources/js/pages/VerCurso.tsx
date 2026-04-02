@@ -23,6 +23,7 @@ import CreativeBox from "@/components/CreativeBox";
 import GamesFPS from "@/components/GamesFPS";
 import CarsGame from "@/components/CarsGame";
 import PCBuilder3D from "@/games/PCBuilder3D";
+import VRMovimientos from "@/games/VRMovimientos";
 import {
     MinijuegoFullscreenToggleButton,
     minijuegoTienePantallaCompleta,
@@ -83,6 +84,11 @@ const MINI_JUEGOS_INFO: Record<string, { label: string; tag: string; icon: React
         label: "PC Builder 3D",
         tag: "3D",
         icon: <Cpu size={14} />,
+    },
+    movimientos: {
+        label: "Movimientos (VR)",
+        tag: "VR",
+        icon: <Glasses size={14} />,
     },
     creative_box: {
         label: "Creative Box",
@@ -256,7 +262,17 @@ export default function VerCurso({ id }: { id: number }) {
     };
 
     // Juegos disponibles para este curso (por ahora solo el asignado, en el futuro podría ser lista)
-    const juegosDisponibles = miniJuegoCurso && MINI_JUEGOS_INFO[miniJuegoCurso]
+    const categoriaCurso = (curso?.categoria || "").toLowerCase();
+    const miniJuegoEsCompatibleConCategoria =
+        !miniJuegoCurso
+            ? false
+            : miniJuegoCurso === "pc_builder_3d"
+            ? categoriaCurso === "tecnologia"
+            : miniJuegoCurso === "movimientos"
+            ? categoriaCurso === "vr"
+            : true;
+
+    const juegosDisponibles = miniJuegoCurso && MINI_JUEGOS_INFO[miniJuegoCurso] && miniJuegoEsCompatibleConCategoria
         ? [miniJuegoCurso]
         : [];
 
@@ -866,6 +882,10 @@ export default function VerCurso({ id }: { id: number }) {
                                             ) : juegoSeleccionado === "pc_builder_3d" ? (
                                                 <div style={{ padding: 24, background: "#14151c" }}>
                                                     <PCBuilder3D />
+                                                </div>
+                                            ) : juegoSeleccionado === "movimientos" ? (
+                                                <div style={{ padding: 24, background: "#14151c" }}>
+                                                    <VRMovimientos />
                                                 </div>
                                             ) : juegoSeleccionado === "games_fps" ? (
                                                 <div style={{ padding: 24, background: "#0a0e14" }}>

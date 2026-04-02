@@ -27,7 +27,7 @@ class CursoController extends Controller
     $miniJuego = ($miniJuego !== null && $miniJuego !== '') ? $miniJuego : null;
 
     $categoria = $request->input('categoria');
-    $allowedCat = ['play', 'medicina', 'tecnologia', 'creativo'];
+    $allowedCat = ['play', 'medicina', 'tecnologia', 'creativo', 'vr'];
     if (! is_string($categoria) || ! in_array($categoria, $allowedCat, true)) {
         $categoria = 'tecnologia';
     }
